@@ -1,0 +1,25 @@
+/* Estilos globales para Todo Electro */
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #000000;
+  background-image: linear-gradient(to bottom right, #000000, #121212);
+  color: white;
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  width: 100%;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.app-container {
+  background-color: #000000;
+  background-image: linear-gradient(to bottom right, #000000, #121212);
+  color: white;
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  width: 100%;
+} 

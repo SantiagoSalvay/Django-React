@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-black to-gray-900 min-h-screen text-white;
+  }
+}
+
+@layer components {
+  .glassmorphism {
+    @apply bg-black/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-lg;
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-to-r from-dark-blue to-electric-blue text-white font-orbitron font-bold py-2 px-6 rounded-full 
+    shadow-md hover:shadow-neon-blue transition-all duration-300 transform hover:-translate-y-1;
+  }
+  
+  .btn-secondary {
+    @apply bg-transparent border border-neon-blue text-white font-orbitron py-2 px-6 rounded-full
+    hover:bg-neon-blue/20 transition-all duration-300 shadow-sm hover:shadow-neon-blue;
+  }
+  
+  .card {
+    @apply glassmorphism p-6 hover:border-neon-blue/50 transition-all duration-300;
+  }
+
+  .navbar {
+    @apply glassmorphism sticky top-4 z-50 mx-auto max-w-7xl px-4 py-3 border-b border-white/10 shadow-md;
+  }
+
+  .input-field {
+    @apply bg-black/50 border border-white/20 rounded-lg p-3 focus:border-neon-blue focus:outline-none 
+    focus:ring-1 focus:ring-neon-blue/50 text-white w-full transition-all placeholder:text-white/50;
+  }
+} 

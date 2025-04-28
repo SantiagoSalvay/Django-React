@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo Electro - Alternativa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000000;
+      background-image: linear-gradient(to bottom right, #000000, #121212);
+      color: white;
+      font-family: 'Rajdhani', sans-serif;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    header {
+      background-color: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 1rem 0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      font-weight: bold;
+      background: linear-gradient(to right, #00ccff, #bc13fe);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+    }
+    
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    
+    .nav-links a:hover {
+      color: #00ccff;
+    }
+    
+    .hero {
+      padding: 4rem 0;
+      text-align: center;
+    }
+    
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    
+    h1 span {
+      background: linear-gradient(to right, #00ccff, #bc13fe);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    
+    .hero p {
+      max-width: 600px;
+      margin: 0 auto 2rem auto;
+      font-size: 1.2rem;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(to right, #0066cc, #00ccff);
+      color: white;
+      padding: 0.75rem 2rem;
+      border-radius: 9999px;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: bold;
+      text-decoration: none;
+      box-shadow: 0 0 10px rgba(0, 195, 255, 0.5);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .cta-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 15px rgba(0, 195, 255, 0.7);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container navbar">
+      <div class="logo">Todo Electro</div>
+      <div class="nav-links">
+        <a href="#">Inicio</a>
+        <a href="#">Productos</a>
+        <a href="#">Categorías</a>
+        <a href="#">Contacto</a>
+      </div>
+    </div>
+  </header>
+  
+  <main>
+    <section class="hero container">
+      <h1>El Futuro de la Tecnología <span>En Tu Hogar</span></h1>
+      <p>Descubre la más amplia selección de electrodomésticos con tecnología de punta, diseño elegante y precios increíbles.</p>
+      <a href="#" class="cta-button">Ver Productos</a>
+    </section>
+  </main>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('La página alternativa ha cargado correctamente');
+    });
+  </script>
+</body>
+</html> 

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #000, #0066cc);
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+            text-align: center;
+            color: white;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .content {
+            padding: 30px;
+            background-color: #fff;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #0066cc, #00ccff);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            margin: 20px 0;
+            box-shadow: 0 4px 10px rgba(0, 102, 204, 0.3);
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 102, 204, 0.4);
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Todo Electro</h1>
+        </div>
+        <div class="content">
+            <h2>¡Hola {{ user.username }}!</h2>
+            <p>Gracias por registrarte en Todo Electro. Para activar tu cuenta y poder acceder a todos nuestros productos, por favor haz clic en el botón de abajo:</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ protocol }}://{{ domain }}/api/users/verify/{{ uid }}/{{ token }}/" class="button">Verificar mi cuenta</a>
+            </div>
+            
+            <p>Si no solicitaste este correo, puedes ignorarlo.</p>
+            
+            <p>Atentamente,<br>
+            El equipo de Todo Electro</p>
+        </div>
+        <div class="footer">
+            <p>© 2025 Todo Electro. Todos los derechos reservados.</p>
+            <p>Este correo fue enviado a {{ user.email }}</p>
+        </div>
+    </div>
+</body>
+</html> 

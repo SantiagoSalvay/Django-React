@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00c3ff" />
+      <stop offset="100%" stop-color="#bc13fe" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="#121212" rx="50" ry="50" />
+  <g filter="url(#glow)">
+    <path d="M256 120 L346 185 L346 315 L256 380 L166 315 L166 185 Z" stroke="url(#gradient1)" stroke-width="16" fill="none" />
+    <circle cx="256" cy="120" r="10" fill="#00c3ff" />
+    <circle cx="346" cy="185" r="10" fill="#448aff" />
+    <circle cx="346" cy="315" r="10" fill="#7c4dff" />
+    <circle cx="256" cy="380" r="10" fill="#bc13fe" />
+    <circle cx="166" cy="315" r="10" fill="#7c4dff" />
+    <circle cx="166" cy="185" r="10" fill="#448aff" />
+    <text x="256" y="260" font-family="'Orbitron', sans-serif" font-weight="bold" font-size="45" fill="white" text-anchor="middle">TE</text>
+  </g>
+</svg> 
