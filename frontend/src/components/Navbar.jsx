@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getAllCategories } from '../api/productApi'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -11,6 +11,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
   
   useEffect(() => {
     const fetchCategories = async () => {
@@ -28,6 +29,12 @@ const Navbar = () => {
   const handleLogout = () => {
     logout()
     navigate('/login')
+  }
+  
+  const handleLoginClick = (e) => {
+    e.preventDefault()
+    const currentPath = location.pathname
+    navigate(`/login?returnTo=${encodeURIComponent(currentPath)}`)
   }
   
   // Mobile menu animation variants
@@ -152,7 +159,7 @@ const Navbar = () => {
             </button>
           ) : (
             <div className="flex space-x-4">
-              <Link to="/login" className="btn-secondary">Iniciar Sesión</Link>
+              <button onClick={handleLoginClick} className="btn-secondary">Iniciar Sesión</button>
               <Link to="/register" className="btn-primary">Registrarse</Link>
             </div>
           )}
@@ -239,9 +246,12 @@ const Navbar = () => {
                 </button>
               ) : (
                 <div className="flex flex-col space-y-4 mt-6">
-                  <Link to="/login" className="btn-secondary text-center" onClick={() => setIsOpen(false)}>
+                  <button onClick={(e) => {
+                    handleLoginClick(e)
+                    setIsOpen(false)
+                  }} className="btn-secondary text-center">
                     Iniciar Sesión
-                  </Link>
+                  </button>
                   <Link to="/register" className="btn-primary text-center" onClick={() => setIsOpen(false)}>
                     Registrarse
                   </Link>
@@ -255,4 +265,4 @@ const Navbar = () => {
   )
 }
 
-export default Navbar 
+export default Navbar

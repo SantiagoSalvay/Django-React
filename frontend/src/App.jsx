@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
-import Navbar from './components/Navbar'
+import MainLayout from './components/MainLayout'
 import HomePage from './pages/HomePage'
 import ProductsPage from './pages/ProductsPage'
 import CategoryPage from './pages/CategoryPage'
@@ -51,40 +51,53 @@ const AdminRoute = ({ children }) => {
 function App() {
   return (
     <div className="app-container">
-      <Navbar />
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/products" element={
-            <ProtectedRoute>
+      <Routes>
+        {/* Rutas sin Navbar */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        
+        {/* Rutas con Navbar */}
+        <Route path="/" element={
+          <MainLayout>
+            <HomePage />
+          </MainLayout>
+        } />
+        <Route path="/products" element={
+          <ProtectedRoute>
+            <MainLayout>
               <ProductsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/category/:slug" element={
-            <ProtectedRoute>
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/category/:slug" element={
+          <ProtectedRoute>
+            <MainLayout>
               <CategoryPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/payment-methods" element={
-            <ProtectedRoute>
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/payment-methods" element={
+          <ProtectedRoute>
+            <MainLayout>
               <PaymentMethodsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin" element={
-            <AdminRoute>
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <AdminRoute>
+            <MainLayout>
               <AdminDashboard />
-            </AdminRoute>
-          } />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </main>
-      <footer className="text-center p-6 text-white/60 mt-20">
-        <p>© {new Date().getFullYear()} Todo Electro. Todos los derechos reservados.</p>
-      </footer>
+            </MainLayout>
+          </AdminRoute>
+        } />
+        <Route path="*" element={
+          <MainLayout>
+            <NotFoundPage />
+          </MainLayout>
+        } />
+      </Routes>
     </div>
   )
 }
 
-export default App 
+export default App

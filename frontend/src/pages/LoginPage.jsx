@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FiUser, FiLock, FiArrowRight } from 'react-icons/fi'
+import { FcGoogle } from 'react-icons/fc'
 import { useAuth } from '../context/AuthContext'
 
 const LoginPage = () => {
@@ -9,12 +10,15 @@ const LoginPage = () => {
   const [password, setPassword] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [isLogin, setIsLogin] = useState(true)
   const { login, error, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   
+  const searchParams = new URLSearchParams(location.search);
+  const returnUrl = searchParams.get('returnTo') || '/';
+
   useEffect(() => {
-    // Check for the verified parameter in the URL
     const params = new URLSearchParams(location.search)
     const verified = params.get('verified')
     
@@ -24,19 +28,19 @@ const LoginPage = () => {
       setErrorMessage('Error al verificar la cuenta. Por favor, intenta de nuevo o contacta con soporte.')
     }
   }, [location])
-  
+
   useEffect(() => {
     if (error) {
       setErrorMessage(typeof error === 'string' ? error : 'Error al iniciar sesión. Por favor, intenta de nuevo.')
     }
   }, [error])
-  
+
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/')
+      navigate(returnUrl)
     }
-  }, [isAuthenticated, navigate])
-  
+  }, [isAuthenticated, navigate, returnUrl])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setErrorMessage('')
@@ -49,9 +53,14 @@ const LoginPage = () => {
     
     await login(username, password)
   }
-  
+
+  const handleGoogleLogin = () => {
+    // Implementar login con Google
+    console.log('Login con Google')
+  }
+
   return (
-    <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)]">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black to-gray-900 p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -59,7 +68,7 @@ const LoginPage = () => {
         className="w-full max-w-md glassmorphism p-8"
       >
         <h2 className="text-3xl font-orbitron font-bold text-center mb-8 text-white">
-          Iniciar Sesión
+          {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
         </h2>
         
         {errorMessage && (
@@ -107,34 +116,53 @@ const LoginPage = () => {
             </div>
           </div>
           
+          <div className="flex justify-between items-center text-sm">
+            <Link to="/forgot-password" className="text-neon-blue hover:text-neon-purple transition-colors">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+
           <motion.button
             type="submit"
             className="btn-primary w-full flex items-center justify-center space-x-2"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <span>Acceder</span>
+            <span>{isLogin ? 'Acceder' : 'Registrarse'}</span>
             <FiArrowRight />
           </motion.button>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/10"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-black text-white/60">O continúa con</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="w-full py-2 px-4 border border-white/10 rounded-full hover:bg-white/5 
+                     flex items-center justify-center space-x-2 text-white transition-all"
+          >
+            <FcGoogle className="text-xl" />
+            <span>Google</span>
+          </button>
         </form>
         
         <div className="mt-6 text-center text-white/70">
-          <p>¿No tienes una cuenta?{' '}
+          <p>
+            {isLogin ? '¿No tienes una cuenta?' : '¿Ya tienes una cuenta?'}{' '}
             <Link to="/register" className="text-neon-blue hover:underline transition-all">
-              Regístrate
+              {isLogin ? 'Regístrate' : 'Inicia Sesión'}
             </Link>
           </p>
         </div>
       </motion.div>
-      
-      {/* Admin credentials hint */}
-      <div className="mt-8 text-white/50 text-center text-sm max-w-md">
-        <p>Para probar como administrador:</p>
-        <p>Email: admin@admin</p>
-        <p>Contraseña: admin</p>
-      </div>
     </div>
   )
 }
 
-export default LoginPage 
+export default LoginPage

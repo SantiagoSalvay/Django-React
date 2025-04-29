@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FiUser, FiMail, FiLock, FiUserPlus } from 'react-icons/fi'
+import { FiUser, FiMail, FiLock, FiUserPlus, FiPhone } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
-    username: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
     email: '',
     password: '',
     password2: ''
@@ -27,10 +29,18 @@ const RegisterPage = () => {
   const validateForm = () => {
     const newErrors = {}
     
-    if (!formData.username) {
-      newErrors.username = 'El nombre de usuario es obligatorio'
-    } else if (formData.username.length < 3) {
-      newErrors.username = 'El nombre de usuario debe tener al menos 3 caracteres'
+    if (!formData.firstName) {
+      newErrors.firstName = 'El nombre es obligatorio'
+    }
+    
+    if (!formData.lastName) {
+      newErrors.lastName = 'El apellido es obligatorio'
+    }
+    
+    if (!formData.phone) {
+      newErrors.phone = 'El teléfono es obligatorio'
+    } else if (!/^\d{10}$/.test(formData.phone)) {
+      newErrors.phone = 'El teléfono debe tener 10 dígitos'
     }
     
     if (!formData.email) {
@@ -56,8 +66,8 @@ const RegisterPage = () => {
   
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
     const formErrors = validateForm()
+    
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors)
       return
@@ -69,7 +79,9 @@ const RegisterPage = () => {
     if (success) {
       setSuccessMessage('¡Registro exitoso! Por favor, verifica tu correo electrónico para activar tu cuenta.')
       setFormData({
-        username: '',
+        firstName: '',
+        lastName: '',
+        phone: '',
         email: '',
         password: '',
         password2: ''
@@ -82,14 +94,14 @@ const RegisterPage = () => {
       navigate('/')
     }
   }, [isAuthenticated, navigate])
-  
+
   return (
-    <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black to-gray-900 p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md glassmorphism p-8"
+        className="w-full max-w-xl glassmorphism p-8"
       >
         <h2 className="text-3xl font-orbitron font-bold text-center mb-8 text-white">
           Crear Cuenta
@@ -102,23 +114,65 @@ const RegisterPage = () => {
         )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white mb-2 font-rajdhani">Nombre</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiUser className="text-neon-blue" />
+                </div>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className={`input-field pl-10 ${errors.firstName ? 'border-red-500' : ''}`}
+                  placeholder="Tu nombre"
+                />
+              </div>
+              {errors.firstName && (
+                <p className="text-red-400 text-sm mt-1">{errors.firstName}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-white mb-2 font-rajdhani">Apellido</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiUser className="text-neon-blue" />
+                </div>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className={`input-field pl-10 ${errors.lastName ? 'border-red-500' : ''}`}
+                  placeholder="Tu apellido"
+                />
+              </div>
+              {errors.lastName && (
+                <p className="text-red-400 text-sm mt-1">{errors.lastName}</p>
+              )}
+            </div>
+          </div>
+
           <div>
-            <label className="block text-white mb-2 font-rajdhani">Usuario</label>
+            <label className="block text-white mb-2 font-rajdhani">Teléfono</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiUser className="text-neon-blue" />
+                <FiPhone className="text-neon-blue" />
               </div>
               <input
-                type="text"
-                name="username"
-                value={formData.username}
+                type="tel"
+                name="phone"
+                value={formData.phone}
                 onChange={handleChange}
-                className={`input-field pl-10 ${errors.username ? 'border-red-500' : ''}`}
-                placeholder="Nombre de usuario"
+                className={`input-field pl-10 ${errors.phone ? 'border-red-500' : ''}`}
+                placeholder="Número de teléfono"
               />
             </div>
-            {errors.username && (
-              <p className="text-red-400 text-sm mt-1">{errors.username}</p>
+            {errors.phone && (
+              <p className="text-red-400 text-sm mt-1">{errors.phone}</p>
             )}
           </div>
           
@@ -142,44 +196,46 @@ const RegisterPage = () => {
             )}
           </div>
           
-          <div>
-            <label className="block text-white mb-2 font-rajdhani">Contraseña</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiLock className="text-neon-blue" />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white mb-2 font-rajdhani">Contraseña</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiLock className="text-neon-blue" />
+                </div>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={`input-field pl-10 ${errors.password ? 'border-red-500' : ''}`}
+                  placeholder="Mínimo 8 caracteres"
+                />
               </div>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className={`input-field pl-10 ${errors.password ? 'border-red-500' : ''}`}
-                placeholder="Mínimo 8 caracteres"
-              />
+              {errors.password && (
+                <p className="text-red-400 text-sm mt-1">{errors.password}</p>
+              )}
             </div>
-            {errors.password && (
-              <p className="text-red-400 text-sm mt-1">{errors.password}</p>
-            )}
-          </div>
-          
-          <div>
-            <label className="block text-white mb-2 font-rajdhani">Confirmar Contraseña</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiLock className="text-neon-blue" />
+            
+            <div>
+              <label className="block text-white mb-2 font-rajdhani">Confirmar</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiLock className="text-neon-blue" />
+                </div>
+                <input
+                  type="password"
+                  name="password2"
+                  value={formData.password2}
+                  onChange={handleChange}
+                  className={`input-field pl-10 ${errors.password2 ? 'border-red-500' : ''}`}
+                  placeholder="Repite la contraseña"
+                />
               </div>
-              <input
-                type="password"
-                name="password2"
-                value={formData.password2}
-                onChange={handleChange}
-                className={`input-field pl-10 ${errors.password2 ? 'border-red-500' : ''}`}
-                placeholder="Repite la contraseña"
-              />
+              {errors.password2 && (
+                <p className="text-red-400 text-sm mt-1">{errors.password2}</p>
+              )}
             </div>
-            {errors.password2 && (
-              <p className="text-red-400 text-sm mt-1">{errors.password2}</p>
-            )}
           </div>
           
           <motion.button
@@ -201,7 +257,7 @@ const RegisterPage = () => {
           </p>
         </div>
         
-        <div className="mt-6 text-white/60 text-sm">
+        <div className="mt-6 text-white/60 text-sm text-center">
           <p>Al registrarte, aceptas nuestros <a href="#" className="text-neon-blue hover:underline">Términos y Condiciones</a> y <a href="#" className="text-neon-blue hover:underline">Política de Privacidad</a>.</p>
         </div>
       </motion.div>
@@ -209,4 +265,4 @@ const RegisterPage = () => {
   )
 }
 
-export default RegisterPage 
+export default RegisterPage

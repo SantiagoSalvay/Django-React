@@ -10,5 +10,6 @@ export default defineConfig({
       '/api': 'http://localhost:8000',
       '/media': 'http://localhost:8000',
     },
+    historyApiFallback: true // Habilita el manejo de rutas SPA
   },
-}) 
+})
