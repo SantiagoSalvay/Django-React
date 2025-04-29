@@ -69,13 +69,18 @@
         </div>
         <div class="content">
             <h2>¡Hola {{ user.username }}!</h2>
-            <p>Gracias por registrarte en Todo Electro. Para activar tu cuenta y poder acceder a todos nuestros productos, por favor haz clic en el botón de abajo:</p>
+            <p>¡Gracias por registrarte en Todo Electro! Para comenzar a explorar nuestra amplia selección de productos electrónicos, necesitamos verificar tu dirección de correo electrónico.</p>
             
             <div style="text-align: center;">
-                <a href="{{ protocol }}://{{ domain }}/api/users/verify/{{ uid }}/{{ token }}/" class="button">Verificar mi cuenta</a>
+                <a href="http://localhost:8000/api/users/verify/{{ uid }}/{{ token }}/" class="button">Verificar mi cuenta</a>
             </div>
             
-            <p>Si no solicitaste este correo, puedes ignorarlo.</p>
+            <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+            <p style="word-break: break-all; color: #666;">http://localhost:8000/api/users/verify/{{ uid }}/{{ token }}/</p>
+            
+            <p>Por razones de seguridad, este enlace expirará en 24 horas. Si no verificas tu cuenta en este tiempo, necesitarás solicitar un nuevo enlace de verificación.</p>
+            
+            <p>Si no solicitaste esta verificación, puedes ignorar este correo electrónico.</p>
             
             <p>Atentamente,<br>
             El equipo de Todo Electro</p>
@@ -86,4 +91,4 @@
         </div>
     </div>
 </body>
-</html> 
+</html>

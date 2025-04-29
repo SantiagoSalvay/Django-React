@@ -11,23 +11,28 @@ const LoginPage = () => {
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [isLogin, setIsLogin] = useState(true)
+  const [isVerifying, setIsVerifying] = useState(false)
   const { login, error, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   
   const searchParams = new URLSearchParams(location.search);
   const returnUrl = searchParams.get('returnTo') || '/';
+  const verified = searchParams.get('verified');
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    const verified = params.get('verified')
-    
-    if (verified === '1') {
-      setSuccessMessage('¡Cuenta verificada! Ahora puedes iniciar sesión.')
-    } else if (verified === '0') {
-      setErrorMessage('Error al verificar la cuenta. Por favor, intenta de nuevo o contacta con soporte.')
+    if (verified) {
+      setIsVerifying(true)
+      setTimeout(() => {
+        if (verified === '1') {
+          setSuccessMessage('¡Tu cuenta ha sido verificada exitosamente! Ahora puedes iniciar sesión para acceder a todos nuestros productos.')
+        } else if (verified === '0') {
+          setErrorMessage('Hubo un problema al verificar tu cuenta. El enlace puede haber expirado o ser inválido. Por favor, contacta a soporte si el problema persiste.')
+        }
+        setIsVerifying(false)
+      }, 1000)
     }
-  }, [location])
+  }, [verified])
 
   useEffect(() => {
     if (error) {
@@ -71,86 +76,97 @@ const LoginPage = () => {
           {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
         </h2>
         
-        {errorMessage && (
-          <div className="bg-red-500/20 border border-red-500 text-white p-3 rounded-lg mb-6">
-            {errorMessage}
+        {isVerifying && (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neon-blue mx-auto mb-4"></div>
+            <p className="text-white">Verificando tu cuenta...</p>
           </div>
         )}
         
-        {successMessage && (
-          <div className="bg-green-500/20 border border-green-500 text-white p-3 rounded-lg mb-6">
-            {successMessage}
-          </div>
+        {!isVerifying && (
+          <>
+            {errorMessage && (
+              <div className="bg-red-500/20 border border-red-500 text-white p-3 rounded-lg mb-6">
+                {errorMessage}
+              </div>
+            )}
+            
+            {successMessage && (
+              <div className="bg-green-500/20 border border-green-500 text-white p-3 rounded-lg mb-6">
+                {successMessage}
+              </div>
+            )}
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-white mb-2 font-rajdhani">Usuario</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FiUser className="text-neon-blue" />
+                  </div>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="input-field pl-10"
+                    placeholder="Nombre de usuario"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-white mb-2 font-rajdhani">Contraseña</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FiLock className="text-neon-blue" />
+                  </div>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="input-field pl-10"
+                    placeholder="Contraseña"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center text-sm">
+                <Link to="/forgot-password" className="text-neon-blue hover:text-neon-purple transition-colors">
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
+
+              <motion.button
+                type="submit"
+                className="btn-primary w-full flex items-center justify-center space-x-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <span>{isLogin ? 'Acceder' : 'Registrarse'}</span>
+                <FiArrowRight />
+              </motion.button>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-black text-white/60">O continúa con</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                className="w-full py-2 px-4 border border-white/10 rounded-full hover:bg-white/5 
+                         flex items-center justify-center space-x-2 text-white transition-all"
+              >
+                <FcGoogle className="text-xl" />
+                <span>Google</span>
+              </button>
+            </form>
+          </>
         )}
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-white mb-2 font-rajdhani">Usuario</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiUser className="text-neon-blue" />
-              </div>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="input-field pl-10"
-                placeholder="Nombre de usuario"
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-white mb-2 font-rajdhani">Contraseña</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiLock className="text-neon-blue" />
-              </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input-field pl-10"
-                placeholder="Contraseña"
-              />
-            </div>
-          </div>
-          
-          <div className="flex justify-between items-center text-sm">
-            <Link to="/forgot-password" className="text-neon-blue hover:text-neon-purple transition-colors">
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </div>
-
-          <motion.button
-            type="submit"
-            className="btn-primary w-full flex items-center justify-center space-x-2"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <span>{isLogin ? 'Acceder' : 'Registrarse'}</span>
-            <FiArrowRight />
-          </motion.button>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-black text-white/60">O continúa con</span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            className="w-full py-2 px-4 border border-white/10 rounded-full hover:bg-white/5 
-                     flex items-center justify-center space-x-2 text-white transition-all"
-          >
-            <FcGoogle className="text-xl" />
-            <span>Google</span>
-          </button>
-        </form>
         
         <div className="mt-6 text-center text-white/70">
           <p>

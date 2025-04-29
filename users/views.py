@@ -33,7 +33,7 @@ class RegisterView(generics.CreateAPIView):
         message = render_to_string('verification_email.html', {
             'user': user,
             'protocol': 'http',  # Use https in production
-            'domain': 'localhost:8000',  # Replace with your domain
+            'domain': 'localhost:5173',  # Frontend URL
             'uid': uid,
             'token': token,
         })
@@ -63,10 +63,10 @@ class VerifyEmailView(APIView):
             user.profile.save()
             
             # Redirect to frontend page after successful verification
-            return redirect('http://localhost:3000/login?verified=1')
+            return redirect('http://localhost:5173/login?verified=1')
         else:
             # Redirect to frontend page with error
-            return redirect('http://localhost:3000/login?verified=0')
+            return redirect('http://localhost:5173/login?verified=0')
 
 class UserProfileView(generics.RetrieveAPIView):
     serializer_class = UserSerializer

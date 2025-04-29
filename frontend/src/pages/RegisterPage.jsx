@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
+    username: '',
     firstName: '',
     lastName: '',
     phone: '',
@@ -28,6 +29,10 @@ const RegisterPage = () => {
   
   const validateForm = () => {
     const newErrors = {}
+    
+    if (!formData.username) {
+      newErrors.username = 'El nombre de usuario es obligatorio'
+    }
     
     if (!formData.firstName) {
       newErrors.firstName = 'El nombre es obligatorio'
@@ -74,11 +79,24 @@ const RegisterPage = () => {
     }
     
     setErrors({})
-    const success = await register(formData)
+    // Transform the data to match the backend expectations
+    const registerData = {
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+      password2: formData.password2
+    }
+    
+    const success = await register(registerData)
     
     if (success) {
-      setSuccessMessage('¡Registro exitoso! Por favor, verifica tu correo electrónico para activar tu cuenta.')
+      setSuccessMessage(
+        '¡Registro exitoso! Te hemos enviado un correo electrónico de verificación. ' +
+        'Por favor, revisa tu bandeja de entrada y haz clic en el enlace de verificación ' +
+        'para activar tu cuenta. Si no lo encuentras, revisa tu carpeta de spam.'
+      )
       setFormData({
+        username: '',
         firstName: '',
         lastName: '',
         phone: '',
@@ -114,6 +132,26 @@ const RegisterPage = () => {
         )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-white mb-2 font-rajdhani">Nombre de Usuario</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FiUser className="text-neon-blue" />
+              </div>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                className={`input-field pl-10 ${errors.username ? 'border-red-500' : ''}`}
+                placeholder="Nombre de usuario"
+              />
+            </div>
+            {errors.username && (
+              <p className="text-red-400 text-sm mt-1">{errors.username}</p>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-white mb-2 font-rajdhani">Nombre</label>
