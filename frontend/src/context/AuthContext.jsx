@@ -71,14 +71,22 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     setError(null)
     try {
-      await axios.post('/api/users/register/', userData)
+      await axios.post('/api/users/register/', userData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
       return true
     } catch (err) {
       console.error('Register error:', err)
       if (err.response && err.response.data) {
-        setError(err.response.data)
+        if (typeof err.response.data === 'string') {
+          setError({ general: err.response.data })
+        } else {
+          setError(err.response.data)
+        }
       } else {
-        setError('Error al registrarse. Inténtalo de nuevo.')
+        setError({ general: 'Error al registrarse. Inténtalo de nuevo.' })
       }
       return false
     }

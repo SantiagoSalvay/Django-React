@@ -28,82 +28,33 @@ const RegisterPage = () => {
   }
   
   const validateForm = () => {
-    const newErrors = {}
-    
-    if (!formData.username) {
-      newErrors.username = 'El nombre de usuario es obligatorio'
-    }
-    
-    if (!formData.firstName) {
-      newErrors.firstName = 'El nombre es obligatorio'
-    }
-    
-    if (!formData.lastName) {
-      newErrors.lastName = 'El apellido es obligatorio'
-    }
-    
-    if (!formData.phone) {
-      newErrors.phone = 'El teléfono es obligatorio'
-    } else if (!/^\d{10}$/.test(formData.phone)) {
-      newErrors.phone = 'El teléfono debe tener 10 dígitos'
-    }
-    
-    if (!formData.email) {
-      newErrors.email = 'El correo electrónico es obligatorio'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'El correo electrónico no es válido'
-    }
-    
-    if (!formData.password) {
-      newErrors.password = 'La contraseña es obligatoria'
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'La contraseña debe tener al menos 8 caracteres'
-    }
-    
-    if (!formData.password2) {
-      newErrors.password2 = 'Debes confirmar la contraseña'
-    } else if (formData.password !== formData.password2) {
-      newErrors.password2 = 'Las contraseñas no coinciden'
-    }
-    
-    return newErrors
-  }
-  
+    const newErrors = {};
+    if (!formData.username) newErrors.username = 'El nombre de usuario es obligatorio';
+    if (!formData.email) newErrors.email = 'El correo electrónico es obligatorio';
+    if (!formData.password) newErrors.password = 'La contraseña es obligatoria';
+    if (!formData.password2) newErrors.password2 = 'Debes repetir la contraseña';
+    if (formData.password !== formData.password2) newErrors.password2 = 'Las contraseñas no coinciden';
+    return newErrors;
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    const formErrors = validateForm()
-    
-    if (Object.keys(formErrors).length > 0) {
-      setErrors(formErrors)
-      return
+    e.preventDefault();
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
     }
-    
-    setErrors({})
-    // Transform the data to match the backend expectations
+    setErrors({});
     const registerData = {
       username: formData.username,
       email: formData.email,
       password: formData.password,
       password2: formData.password2
-    }
-    
-    const success = await register(registerData)
-    
+    };
+    const success = await register(registerData);
     if (success) {
-      setSuccessMessage(
-        '¡Registro exitoso! Te hemos enviado un correo electrónico de verificación. ' +
-        'Por favor, revisa tu bandeja de entrada y haz clic en el enlace de verificación ' +
-        'para activar tu cuenta. Si no lo encuentras, revisa tu carpeta de spam.'
-      )
-      setFormData({
-        username: '',
-        firstName: '',
-        lastName: '',
-        phone: '',
-        email: '',
-        password: '',
-        password2: ''
-      })
+      navigate('/check-email');
+      return;
     }
   }
   
@@ -128,6 +79,22 @@ const RegisterPage = () => {
         {successMessage && (
           <div className="bg-green-500/20 border border-green-500 text-white p-4 rounded-lg mb-6">
             {successMessage}
+          </div>
+        )}
+        
+        {errors && typeof errors === 'object' && Object.keys(errors).length > 0 && (
+          <div className="text-red-500 text-sm mb-3">
+            {Object.entries(errors).map(([field, msg]) => (
+              <div key={field}>
+                {Array.isArray(msg) ? msg.join(', ') : msg}
+                {field === 'email' && msg === 'Ya existe un usuario con este correo electrónico.' && (
+                  <span> ¿Ya tienes cuenta? <a href="/login" className="underline text-blue-400">Inicia sesión</a> o recupera tu contraseña.</span>
+                )}
+                {field === 'username' && (Array.isArray(msg) ? msg.includes('Ya existe un usuario con este nombre.') : msg === 'Ya existe un usuario con este nombre.') && (
+                  <span> Por favor, elige otro nombre de usuario.</span>
+                )}
+              </div>
+            ))}
           </div>
         )}
         

@@ -9,6 +9,8 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import AdminDashboard from './pages/AdminDashboard'
 import NotFoundPage from './pages/NotFoundPage'
+import CheckEmailPage from './pages/CheckEmailPage'
+import EmailVerifiedPage from './pages/EmailVerifiedPage'
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -55,6 +57,8 @@ function App() {
         {/* Rutas sin Navbar */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/check-email" element={<CheckEmailPage />} />
+        <Route path="/email-verified" element={<EmailVerifiedPage />} />
         
         {/* Rutas con Navbar */}
         <Route path="/" element={
