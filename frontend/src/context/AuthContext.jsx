@@ -45,7 +45,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     setError(null)
     try {
-      const token = 'acea8c507695ea8f91588aaf86a2565b7011fdba'
+      // Realizar la solicitud de autenticación para obtener el token
+      const tokenResponse = await axios.post('/api/token/', {
+        username,
+        password
+      })
+      
+      const token = tokenResponse.data.token
       
       localStorage.setItem('token', token)
       axios.defaults.headers.common['Authorization'] = `Token ${token}`
@@ -57,11 +63,41 @@ export const AuthProvider = ({ children }) => {
       return true
     } catch (err) {
       console.error('Login error:', err)
-      if (err.response && err.response.data) {
-        setError(err.response.data.non_field_errors || 'Credenciales inválidas')
+      
+      // Manejar diferentes tipos de errores
+      if (err.response) {
+        const status = err.response.status
+        const responseData = err.response.data
+        
+        if (status === 400) {
+          // Error de validación - credenciales incorrectas
+          if (responseData.non_field_errors) {
+            setError(responseData.non_field_errors[0])
+          } else if (responseData.username) {
+            setError(`Usuario: ${responseData.username[0]}`)
+          } else if (responseData.password) {
+            setError(`Contraseña: ${responseData.password[0]}`)
+          } else {
+            setError('Credenciales inválidas. Por favor verifica tu usuario y contraseña.')
+          }
+        } else if (status === 404) {
+          // Usuario no encontrado
+          setError('El usuario ingresado no está registrado en el sistema.')
+        } else if (status === 401) {
+          // No autorizado
+          setError('Usuario o contraseña incorrectos.')
+        } else {
+          // Otros errores del servidor
+          setError(`Error del servidor: ${responseData.detail || 'Error desconocido'}`)
+        }
+      } else if (err.request) {
+        // Error de red - no se recibió respuesta
+        setError('No se pudo conectar con el servidor. Verifica tu conexión a internet.')
       } else {
-        setError('Error al iniciar sesión. Inténtalo de nuevo.')
+        // Error en la configuración de la solicitud
+        setError('Error al iniciar sesión. Inténtalo de nuevo más tarde.')
       }
+      
       return false
     }
   }
