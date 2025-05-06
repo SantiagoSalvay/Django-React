@@ -13,6 +13,7 @@ import CheckEmailPage from './pages/CheckEmailPage'
 import EmailVerifiedPage from './pages/EmailVerifiedPage'
 import DiscountedProductsPage from './pages/DiscountedProductsPage'
 import CombosPage from './pages/CombosPage'
+import ProfilePage from './pages/ProfilePage'
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -122,6 +123,11 @@ function App() {
             <MainLayout>
               <CombosPage />
             </MainLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <ProfilePage />
           </ProtectedRoute>
         } />
         <Route path="/admin/*" element={

@@ -11,7 +11,7 @@ from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
-from .serializers import UserSerializer, RegisterSerializer
+from .serializers import UserSerializer, RegisterSerializer, UpdateUserProfileSerializer
 from .models import UserProfile
 
 @api_view(['GET'])
@@ -177,3 +177,17 @@ def get_admin_users(request):
     
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['PUT'])
+@permission_classes([permissions.IsAuthenticated])
+def update_profile(request):
+    user = request.user
+    serializer = UpdateUserProfileSerializer(user, data=request.data, partial=True)
+    
+    if serializer.is_valid():
+        serializer.save()
+        # Devolver los datos actualizados del usuario
+        updated_user_serializer = UserSerializer(user)
+        return Response(updated_user_serializer.data)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
