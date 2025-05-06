@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { 
   FiPlus, 
@@ -14,7 +15,8 @@ import {
   FiDollarSign, 
   FiCheckCircle, 
   FiUserCheck,
-  FiDatabase
+  FiDatabase,
+  FiHome
 } from 'react-icons/fi'
 import '../styles/AdminDashboard.css'
 import { 
@@ -28,14 +30,16 @@ import {
   updateCategory,
   deleteCategory
 } from '../api/productApi'
-import { createAdminUser } from '../api/userApi'
+import { createAdminUser, getAdminUsers } from '../api/userApi'
 
 const AdminDashboard = () => {
   // Data states
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
+  const [adminUsers, setAdminUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   
   // Modal states
   const [showProductModal, setShowProductModal] = useState(false)
@@ -88,6 +92,9 @@ const AdminDashboard = () => {
     password: '',
     role: 'admin' // Default role
   })
+  
+  // Error message for admin user form
+  const [adminUserError, setAdminUserError] = useState(null)
   
   // Discount states
   const [selectedProducts, setSelectedProducts] = useState([])
@@ -178,7 +185,8 @@ const AdminDashboard = () => {
   ]
 
   // Funciones de gestión de usuarios y administración
-  const adminFunctions = [
+  // Algunas funciones solo están disponibles para superadmin
+  const allAdminFunctions = [
     {
       title: 'Crear Usuarios Admin',
       icon: <FiUserCheck className="text-2xl" />,
@@ -191,13 +199,15 @@ const AdminDashboard = () => {
           role: 'admin'
         })
         setShowAdminUserModal(true)
-      }
+      },
+      requiresSuperAdmin: true // Solo superadmin puede crear usuarios admin
     },
     {
       title: 'Ver Ventas',
       icon: <FiDollarSign className="text-2xl" />,
       description: 'Ver estadísticas de ventas',
-      action: () => setShowSalesStatsModal(true)
+      action: () => setShowSalesStatsModal(true),
+      requiresSuperAdmin: false // Todos los admin pueden ver ventas
     },
     {
       title: 'Aprobar Compras',
@@ -206,27 +216,42 @@ const AdminDashboard = () => {
       action: () => {
         setOrderStatusFilter('all')
         setShowOrdersModal(true)
-      }
+      },
+      requiresSuperAdmin: false // Todos los admin pueden aprobar compras
     },
     {
       title: 'Crear Categoría',
       icon: <FiFolder className="text-2xl" />,
       description: 'Crear categorías de productos',
-      action: () => setShowCategoryModal(true)
+      action: () => setShowCategoryModal(true),
+      requiresSuperAdmin: true // Solo superadmin puede crear categorías
     }
   ]
+  
+  // Filtrar las funciones según el rol del usuario
+  const adminFunctions = allAdminFunctions.filter(func => 
+    !func.requiresSuperAdmin || isSuperAdmin
+  )
   
   // Fetch data
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [productsData, categoriesData] = await Promise.all([
+      
+      // Obtener datos del usuario actual para verificar si es superadmin
+      const userDataResponse = await axios.get('/api/users/user-data/')
+      const userData = userDataResponse.data
+      setIsSuperAdmin(userData.is_superuser)
+      
+      const [productsData, categoriesData, adminUsersData] = await Promise.all([
         getAllProducts(),
-        getAllCategories()
+        getAllCategories(),
+        getAdminUsers()
       ])
       
       setProducts(productsData)
       setCategories(categoriesData)
+      setAdminUsers(adminUsersData)
       setError(null)
     } catch (err) {
       setError('Error al cargar los datos')
@@ -239,6 +264,61 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchData()
   }, [])
+  
+  // Handle admin user form changes
+  const handleAdminUserChange = (e) => {
+    const { name, value } = e.target
+    setAdminUserForm({
+      ...adminUserForm,
+      [name]: value
+    })
+  }
+  
+  // Handle admin user form submission
+  const handleAdminUserSubmit = async (e) => {
+    e.preventDefault()
+    setAdminUserError(null)
+    
+    try {
+      setLoading(true)
+      await createAdminUser(adminUserForm)
+      
+      // Reset form
+      setAdminUserForm({
+        name: '',
+        email: '',
+        password: '',
+        role: 'admin'
+      })
+      
+      // Refresh admin users list
+      const adminUsersData = await getAdminUsers()
+      setAdminUsers(adminUsersData)
+      
+      setError(null)
+    } catch (err) {
+      console.error('Error creating admin user:', err)
+      if (err.response && err.response.data && err.response.data.error) {
+        setAdminUserError(err.response.data.error)
+      } else {
+        setAdminUserError('Error al crear el usuario administrador')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  // Close admin user modal
+  const handleCloseAdminUserModal = () => {
+    setAdminUserForm({
+      name: '',
+      email: '',
+      password: '',
+      role: 'admin'
+    })
+    setAdminUserError(null)
+    setShowAdminUserModal(false)
+  }
   
   // Handle product form
   const handleProductChange = (e) => {
@@ -730,64 +810,7 @@ const AdminDashboard = () => {
   }
   
   // Funciones para el modal de usuarios administradores
-  const handleAdminUserChange = (e) => {
-    const { name, value } = e.target
-    setAdminUserForm({
-      ...adminUserForm,
-      [name]: value
-    })
-  }
-  
-  const handleAdminUserSubmit = async (e) => {
-    e.preventDefault()
-    
-    try {
-      setLoading(true)
-      
-      // Preparar los datos del usuario para enviar a la API
-      const userData = {
-        name: adminUserForm.name,
-        email: adminUserForm.email,
-        password: adminUserForm.password,
-        role: adminUserForm.role
-      }
-      
-      console.log('Creando usuario administrador:', userData)
-      
-      // Llamar a la API para crear el usuario
-      const response = await createAdminUser(userData)
-      
-      console.log('Usuario creado exitosamente:', response)
-      
-      // Mostrar mensaje de éxito
-      alert(`Usuario ${adminUserForm.name} creado exitosamente con rol ${adminUserForm.role}`)
-      
-      // Cerrar modal y limpiar formulario
-      setShowAdminUserModal(false)
-      setAdminUserForm({
-        name: '',
-        email: '',
-        password: '',
-        role: 'admin'
-      })
-      
-    } catch (err) {
-      setError('Error al crear usuario administrador')
-      console.error('Error creating admin user:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-  
-  const handleCloseAdminUserModal = () => {
-    setShowAdminUserModal(false)
-    setAdminUserForm({
-      name: '',
-      email: '',
-      password: '',
-      role: 'admin'
-    })
-  }
+  // Estas funciones se han movido a la parte superior del componente
   
   // Función para cerrar el modal de estadísticas de ventas
   const handleCloseSalesStatsModal = () => {
@@ -901,9 +924,31 @@ const AdminDashboard = () => {
   // Main dashboard render
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 p-8">
-      <h1 className="text-3xl font-orbitron font-bold mb-8 text-white">
-        Panel de Control
-      </h1>
+      <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center space-x-4">
+          <h1 className="text-3xl font-orbitron font-bold text-white">
+            Panel de Control
+          </h1>
+          <Link 
+            to="/" 
+            className="flex items-center space-x-2 px-4 py-2 bg-neon-blue/20 hover:bg-neon-blue/40 text-white rounded-lg transition-colors duration-300"
+          >
+            <FiHome />
+            <span>Volver al Inicio</span>
+          </Link>
+        </div>
+        <div className={`px-4 py-2 rounded-full text-sm font-medium ${isSuperAdmin ? 'bg-purple-500/20 text-purple-300' : 'bg-blue-500/20 text-blue-300'}`}>
+          Rol: {isSuperAdmin ? 'Super Administrador' : 'Administrador'}
+        </div>
+      </div>
+      
+      {/* Mensaje de acceso limitado para usuarios admin */}
+      {!isSuperAdmin && (
+        <div className="bg-yellow-500/20 border border-yellow-500/50 text-white p-4 rounded-lg mb-8">
+          <h3 className="font-bold mb-1">Acceso Limitado</h3>
+          <p>Tienes acceso limitado al panel de administración. Algunas funciones solo están disponibles para usuarios con rol de Super Administrador.</p>
+        </div>
+      )}
 
       {error && (
         <div className="admin-error">
@@ -1636,16 +1681,16 @@ const AdminDashboard = () => {
       
       {/* Admin User Modal */}
       {showAdminUserModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-hidden">
           <motion.div 
-            className="glassmorphism w-full max-w-md"
+            className="glassmorphism w-full max-w-4xl max-h-[90vh] overflow-y-auto"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
           >
             <div className="flex justify-between items-center p-6 border-b border-white/10">
               <h2 className="text-xl font-orbitron font-bold text-white">
-                Crear Usuario Administrador
+                Gestión de Usuarios Administradores
               </h2>
               <button 
                 onClick={handleCloseAdminUserModal}
@@ -1655,91 +1700,206 @@ const AdminDashboard = () => {
               </button>
             </div>
             
-            <form onSubmit={handleAdminUserSubmit} className="p-6">
-              <div className="mb-4">
-                <label className="block text-white/70 mb-2">Nombre</label>
-                <input 
-                  type="text" 
-                  name="name"
-                  value={adminUserForm.name}
-                  onChange={handleAdminUserChange}
-                  className="w-full bg-black/30 text-white border border-white/10 rounded p-3"
-                  required
-                />
-              </div>
+            <div className="p-6">
+              {adminUserError && (
+                <div className="bg-red-500/20 border border-red-500 text-white p-4 rounded-lg mb-6">
+                  <p className="font-bold">Error:</p>
+                  <p>{adminUserError}</p>
+                </div>
+              )}
               
-              <div className="mb-4">
-                <label className="block text-white/70 mb-2">Email</label>
-                <input 
-                  type="email" 
-                  name="email"
-                  value={adminUserForm.email}
-                  onChange={handleAdminUserChange}
-                  className="w-full bg-black/30 text-white border border-white/10 rounded p-3"
-                  required
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label className="block text-white/70 mb-2">Contraseña</label>
-                <input 
-                  type="password" 
-                  name="password"
-                  value={adminUserForm.password}
-                  onChange={handleAdminUserChange}
-                  className="w-full bg-black/30 text-white border border-white/10 rounded p-3"
-                  required
-                />
-              </div>
-              
-              <div className="mb-6">
-                <label className="block text-white/70 mb-2">Rol</label>
-                <div className="flex space-x-4">
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="admin"
-                      checked={adminUserForm.role === 'admin'}
-                      onChange={handleAdminUserChange}
-                      className="mr-2"
-                    />
-                    <span className="text-white">Admin</span>
-                    <span className="text-white/50 text-sm ml-2">(Solo gestión de productos)</span>
-                  </label>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Columna izquierda: Formulario */}
+                <div>
+                  <div className="bg-black/20 p-6 rounded-lg border border-white/10 mb-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">Crear Nuevo Usuario Administrador</h3>
+                    
+                    <form onSubmit={handleAdminUserSubmit}>
+                      <div className="mb-4">
+                        <label className="block text-white/70 mb-2">Nombre</label>
+                        <input 
+                          type="text" 
+                          name="name"
+                          value={adminUserForm.name}
+                          onChange={handleAdminUserChange}
+                          className="w-full bg-black/30 text-white border border-white/10 rounded p-3"
+                          required
+                        />
+                      </div>
+                      
+                      <div className="mb-4">
+                        <label className="block text-white/70 mb-2">Email</label>
+                        <input 
+                          type="email" 
+                          name="email"
+                          value={adminUserForm.email}
+                          onChange={handleAdminUserChange}
+                          className="w-full bg-black/30 text-white border border-white/10 rounded p-3"
+                          required
+                        />
+                      </div>
+                      
+                      <div className="mb-4">
+                        <label className="block text-white/70 mb-2">Contraseña</label>
+                        <input 
+                          type="password" 
+                          name="password"
+                          value={adminUserForm.password}
+                          onChange={handleAdminUserChange}
+                          className="w-full bg-black/30 text-white border border-white/10 rounded p-3"
+                          required
+                        />
+                      </div>
+                      
+                      <div className="mb-6">
+                        <label className="block text-white/70 mb-2">Rol</label>
+                        <div className="flex space-x-4">
+                          <label className="inline-flex items-center">
+                            <input
+                              type="radio"
+                              name="role"
+                              value="admin"
+                              checked={adminUserForm.role === 'admin'}
+                              onChange={handleAdminUserChange}
+                              className="mr-2"
+                            />
+                            <span className="text-white">Admin</span>
+                            <span className="text-white/50 text-sm ml-2">(Solo gestión de productos)</span>
+                          </label>
+                          
+                          {/* Opción de superadmin solo visible para usuarios superadmin */}
+                          {isSuperAdmin && (
+                            <label className="inline-flex items-center">
+                              <input
+                                type="radio"
+                                name="role"
+                                value="superadmin"
+                                checked={adminUserForm.role === 'superadmin'}
+                                onChange={handleAdminUserChange}
+                                className="mr-2"
+                              />
+                              <span className="text-white">Super Admin</span>
+                              <span className="text-white/50 text-sm ml-2">(Acceso total)</span>
+                            </label>
+                          )}
+                        </div>
+                        
+                        {/* Mensaje informativo sobre roles */}
+                        <div className="mt-2 text-xs text-white/60">
+                          <p>Los usuarios con rol Admin solo tienen acceso a funciones básicas de gestión.</p>
+                          {isSuperAdmin && <p>Los usuarios con rol Super Admin tienen acceso completo a todas las funcionalidades.</p>}
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end space-x-4">
+                        <button 
+                          type="button" 
+                          onClick={handleCloseAdminUserModal}
+                          className="btn-secondary"
+                        >
+                          Cancelar
+                        </button>
+                        <button 
+                          type="submit" 
+                          className="btn-primary"
+                          disabled={loading}
+                        >
+                          {loading ? 'Creando...' : 'Crear Usuario'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                   
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="superadmin"
-                      checked={adminUserForm.role === 'superadmin'}
-                      onChange={handleAdminUserChange}
-                      className="mr-2"
-                    />
-                    <span className="text-white">Super Admin</span>
-                    <span className="text-white/50 text-sm ml-2">(Acceso total)</span>
-                  </label>
+                  <div className="bg-black/20 p-6 rounded-lg border border-white/10">
+                    <h4 className="text-sm font-semibold text-white mb-2">Información sobre roles:</h4>
+                    <ul className="text-sm text-white/70 space-y-1">
+                      <li className="flex items-center">
+                        <span className="inline-block w-3 h-3 rounded-full bg-purple-500/50 mr-2"></span>
+                        <span><strong>Super Admin:</strong> Acceso completo a todas las funcionalidades del sistema.</span>
+                      </li>
+                      <li className="flex items-center">
+                        <span className="inline-block w-3 h-3 rounded-full bg-blue-500/50 mr-2"></span>
+                        <span><strong>Admin:</strong> Acceso limitado a funciones básicas de gestión.</span>
+                      </li>
+                      <li className="flex items-center">
+                        <span className="inline-block w-3 h-3 rounded-full bg-yellow-500/50 mr-2"></span>
+                        <span><strong>Usuario Principal:</strong> El usuario 'admin' es el único que puede tener rol de Super Admin.</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                
+                {/* Columna derecha: Tabla de usuarios admin */}
+                <div>
+                  <div className="bg-black/20 p-6 rounded-lg border border-white/10">
+                    <h3 className="text-lg font-semibold text-white mb-4">Usuarios Administradores</h3>
+                    
+                    <div className="overflow-y-auto max-h-[400px] rounded-lg border border-white/10 shadow-inner">
+                      <table className="min-w-full divide-y divide-white/10">
+                        <thead className="bg-black/50 sticky top-0 z-10">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">ID</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Nombre</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Email</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Rol</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Estado</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Detalles</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/10 bg-black/20">
+                          {adminUsers.length > 0 ? (
+                            adminUsers.map(user => (
+                              <tr key={user.id} className="hover:bg-white/5 transition-colors">
+                                <td className="px-6 py-4 whitespace-nowrap text-white">{user.id}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-white font-medium">
+                                  {user.username === 'admin' ? (
+                                    <div className="flex items-center">
+                                      <span className="mr-2">{user.username}</span>
+                                      <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-500/30 text-yellow-300">Principal</span>
+                                    </div>
+                                  ) : (
+                                    user.username
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-white">{user.email}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  {user.is_superuser ? (
+                                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-300">Super Admin</span>
+                                  ) : (
+                                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-300">Admin</span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  {user.profile?.is_email_verified ? (
+                                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-500/20 text-green-300">Verificado</span>
+                                  ) : (
+                                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-500/20 text-red-300">No verificado</span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-white">
+                                  <button 
+                                    className="text-neon-blue hover:text-neon-purple transition-colors"
+                                    onClick={() => alert(`Usuario: ${user.username}\nEmail: ${user.email}\nRol: ${user.is_superuser ? 'Super Admin' : 'Admin'}\nVerificado: ${user.profile?.is_email_verified ? 'Sí' : 'No'}`)}
+                                  >
+                                    Ver detalles
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="6" className="px-6 py-12 text-center text-white/70">
+                                No hay usuarios administradores
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
               </div>
-              
-              <div className="flex justify-end space-x-4">
-                <button 
-                  type="button" 
-                  onClick={handleCloseAdminUserModal}
-                  className="btn-secondary"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit" 
-                  className="btn-primary"
-                  disabled={loading}
-                >
-                  {loading ? 'Creando...' : 'Crear Usuario'}
-                </button>
-              </div>
-            </form>
+            </div>
           </motion.div>
         </div>
       )}

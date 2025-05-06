@@ -22,6 +22,17 @@ export const createAdminUser = async (userData) => {
   }
 }
 
+// Get all admin users
+export const getAdminUsers = async () => {
+  try {
+    const response = await axios.get('/api/users/admin-users/')
+    return response.data
+  } catch (error) {
+    console.error('Error fetching admin users:', error)
+    throw error
+  }
+}
+
 // Update user
 export const updateUser = async (userId, userData) => {
   try {

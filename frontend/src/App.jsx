@@ -31,7 +31,7 @@ const ProtectedRoute = ({ children }) => {
   return children
 }
 
-// Admin route component
+// Admin route component - Permite acceso a usuarios con rol admin o superadmin
 const AdminRoute = ({ children }) => {
   const { user, loading } = useAuth()
   
@@ -43,8 +43,29 @@ const AdminRoute = ({ children }) => {
     )
   }
   
+  // Verificar si el usuario tiene permisos de staff (admin o superadmin)
   if (!user?.is_staff) {
     return <Navigate to="/" />
+  }
+  
+  return children
+}
+
+// SuperAdmin route component - Permite acceso SOLO a usuarios con rol superadmin
+const SuperAdminRoute = ({ children }) => {
+  const { user, loading } = useAuth()
+  
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-neon-blue"></div>
+      </div>
+    )
+  }
+  
+  // Verificar si el usuario tiene permisos de superadmin
+  if (!user?.is_superuser) {
+    return <Navigate to="/admin/products" />
   }
   
   return children
