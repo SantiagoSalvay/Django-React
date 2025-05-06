@@ -14,6 +14,13 @@ from rest_framework.decorators import api_view, permission_classes
 from .serializers import UserSerializer, RegisterSerializer
 from .models import UserProfile
 
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def user_data(request):
+    user = request.user
+    serializer = UserSerializer(user)
+    return Response(serializer.data)
+
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = [permissions.AllowAny]

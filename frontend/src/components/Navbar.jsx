@@ -3,13 +3,14 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getAllCategories } from '../api/productApi'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FiHome, FiShoppingBag, FiCreditCard, FiMenu, FiX, FiLogOut } from 'react-icons/fi'
+import { FiHome, FiShoppingBag, FiCreditCard, FiMenu, FiX, FiLogOut, FiUser, FiChevronDown } from 'react-icons/fi'
 
 const Navbar = () => {
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, logout, checkIsAdmin } = useAuth()
   const [categories, setCategories] = useState([])
   const [isOpen, setIsOpen] = useState(false)
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+  const [showUserDropdown, setShowUserDropdown] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   
@@ -139,13 +140,66 @@ const Navbar = () => {
           {/* Botones de sesión */}
           <div className="flex items-center gap-2 ml-2">
             {isAuthenticated ? (
-              <button 
-                onClick={handleLogout} 
-                className="btn-secondary flex items-center gap-1 text-xs px-3 py-1 h-8"
-              >
-                <FiLogOut />
-                <span>Salir</span>
-              </button>
+              <div className="relative group">
+                <button 
+                  onClick={() => setShowUserDropdown(!showUserDropdown)}
+                  onMouseEnter={() => setShowUserDropdown(true)}
+                  onMouseLeave={() => setShowUserDropdown(false)}
+                  className="btn-secondary p-2 flex items-center gap-1"
+                >
+                  <FiUser className="text-lg" />
+                  <FiChevronDown className="text-sm" />
+                </button>
+                {isAuthenticated && (
+                  <AnimatePresence>
+                    {showUserDropdown && (
+                      <motion.div
+                        className="absolute right-0 mt-2 w-48 glassmorphism z-20 border border-cyan-400/40"
+                        variants={dropdownVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        onMouseEnter={() => setShowUserDropdown(true)}
+                        onMouseLeave={() => setShowUserDropdown(false)}
+                      >
+                        <div className="py-2">
+                          {user?.is_staff ? (
+                            <>
+                              <Link
+                                to="/admin/"
+                                className="block px-5 py-1.5 text-sm text-white/80 hover:bg-neon-blue/20 hover:text-white font-rajdhani"
+                              >
+                                Panel de Control
+                              </Link>
+                              <button
+                                onClick={handleLogout}
+                                className="block w-full text-left px-5 py-1.5 text-sm text-white/80 hover:bg-red-500/20 hover:text-white font-rajdhani"
+                              >
+                                Cerrar Sesión
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <Link
+                                to="/profile/"
+                                className="block px-5 py-1.5 text-sm text-white/80 hover:bg-neon-blue/20 hover:text-white font-rajdhani"
+                              >
+                                Mi Perfil
+                              </Link>
+                              <button
+                                onClick={handleLogout}
+                                className="block w-full text-left px-5 py-1.5 text-sm text-white/80 hover:bg-red-500/20 hover:text-white font-rajdhani"
+                              >
+                                Cerrar Sesión
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                )}
+              </div>
             ) : (
               <>
                 <button onClick={handleLoginClick} className="btn-secondary text-xs px-3 py-1 h-8">Iniciar Sesión</button>
@@ -211,8 +265,66 @@ const Navbar = () => {
                   }} 
                   className="btn-primary flex items-center justify-center space-x-2 mt-6"
                 >
-                  <FiLogOut />
-                  <span>Cerrar Sesión</span>
+                  <div className="relative group">
+                    <button 
+                      onClick={() => setShowUserDropdown(!showUserDropdown)}
+                      onMouseEnter={() => setShowUserDropdown(true)}
+                      onMouseLeave={() => setShowUserDropdown(false)}
+                      className="btn-primary p-2 flex items-center gap-1"
+                    >
+                      <FiUser className="text-lg" />
+                      <FiChevronDown className="text-sm" />
+                    </button>
+                    {isAuthenticated && (
+                      <AnimatePresence>
+                        {showUserDropdown && (
+                          <motion.div
+                            className="absolute right-0 mt-2 w-48 glassmorphism z-20 border border-cyan-400/40"
+                            variants={dropdownVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="hidden"
+                            onMouseEnter={() => setShowUserDropdown(true)}
+                            onMouseLeave={() => setShowUserDropdown(false)}
+                          >
+                            <div className="py-2">
+                              {user?.is_staff ? (
+                                <>
+                                  <Link
+                                    to="/admin/"
+                                    className="block px-5 py-1.5 text-sm text-white/80 hover:bg-neon-blue/20 hover:text-white font-rajdhani"
+                                  >
+                                    Panel de Control
+                                  </Link>
+                                  <button
+                                    onClick={handleLogout}
+                                    className="block w-full text-left px-5 py-1.5 text-sm text-white/80 hover:bg-red-500/20 hover:text-white font-rajdhani"
+                                  >
+                                    Cerrar Sesión
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <Link
+                                    to="/profile/"
+                                    className="block px-5 py-1.5 text-sm text-white/80 hover:bg-neon-blue/20 hover:text-white font-rajdhani"
+                                  >
+                                    Mi Perfil
+                                  </Link>
+                                  <button
+                                    onClick={handleLogout}
+                                    className="block w-full text-left px-5 py-1.5 text-sm text-white/80 hover:bg-red-500/20 hover:text-white font-rajdhani"
+                                  >
+                                    Cerrar Sesión
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    )}
+                  </div>
                 </button>
               ) : (
                 <div className="flex flex-col space-y-4 mt-6">

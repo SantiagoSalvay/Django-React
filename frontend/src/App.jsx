@@ -87,11 +87,9 @@ function App() {
             </MainLayout>
           </ProtectedRoute>
         } />
-        <Route path="/admin" element={
+        <Route path="/admin/*" element={
           <AdminRoute>
-            <MainLayout>
-              <AdminDashboard />
-            </MainLayout>
+            <AdminDashboard />
           </AdminRoute>
         } />
         <Route path="*" element={

@@ -1,0 +1,169 @@
+.admin-card {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.admin-card:hover {
+  transform: scale(1.05);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+}
+
+.admin-card.active {
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.admin-card-title {
+  font-size: 1.1rem;
+  font-family: 'Rajdhani', sans-serif;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.5rem;
+}
+
+.admin-card-description {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.admin-category-title {
+  font-size: 1.5rem;
+  font-family: 'Orbitron', sans-serif;
+  color: #3B82F6;
+  margin-bottom: 1rem;
+}
+
+.admin-icon {
+  color: #3B82F6;
+  margin-bottom: 1rem;
+}
+
+.admin-section {
+  margin-bottom: 2rem;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .admin-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.admin-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 70vh;
+}
+
+.admin-loading-spinner {
+  animation: spin 1s linear infinite;
+  border-radius: 50%;
+  height: 4rem;
+  width: 4rem;
+  border: 2px solid transparent;
+  border-top-color: #3B82F6;
+  border-bottom-color: #3B82F6;
+}
+
+.admin-error {
+  background-color: rgba(239, 68, 68, 0.12);
+  border: 1px solid #EF4444;
+  color: #FFFFFF;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-error-refresh {
+  margin-left: 1rem;
+  color: #3B82F6;
+  transition: color 0.2s ease;
+}
+
+.admin-error-refresh:hover {
+  color: #FFFFFF;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-section {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Animación de spinner */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-section {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Efectos de hover mejorados */
+.admin-card:hover {
+  @apply transform scale-105;
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.8);
+}
+
+.admin-card:hover .admin-icon {
+  @apply text-cyan-400/90;
+}
+
+.admin-card:hover .admin-card-title {
+  @apply text-white;
+}
+
+/* Efectos de transición */
+.admin-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-card-title,
+.admin-card-description,
+.admin-icon {
+  transition: color 0.3s ease;
+}

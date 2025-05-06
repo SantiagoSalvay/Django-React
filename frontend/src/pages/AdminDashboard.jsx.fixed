@@ -1,0 +1,623 @@
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { 
+  FiPlus, 
+  FiEdit, 
+  FiTrash2, 
+  FiPackage, 
+  FiFolder, 
+  FiRefreshCw, 
+  FiTag, 
+  FiGift, 
+  FiUsers, 
+  FiDollarSign, 
+  FiCheckCircle, 
+  FiUserCheck,
+  FiDatabase
+} from 'react-icons/fi'
+import './styles/AdminDashboard.css'
+import { 
+  getAllProducts, 
+  getAllCategories, 
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  createCategory,
+  updateCategory,
+  deleteCategory
+} from '../api/productApi'
+
+const AdminDashboard = () => {
+  // Data states
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [activeTab, setActiveTab] = useState('products')
+  
+  // Form states
+  const [productForm, setProductForm] = useState({
+    name: '',
+    description: '',
+    price: '',
+    stock: '',
+    category: '',
+    image: null
+  })
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    slug: ''
+  })
+  
+  // Edit states
+  const [editingProduct, setEditingProduct] = useState(null)
+  const [editingCategory, setEditingCategory] = useState(null)
+
+  // Funciones de gestión de productos
+  const productFunctions = [
+    {
+      title: 'Crear Producto',
+      icon: <FiPlus className="text-2xl" />,
+      description: 'Añadir nuevo producto al catálogo',
+      action: () => setActiveTab('products')
+    },
+    {
+      title: 'Crear Descuento',
+      icon: <FiTag className="text-2xl" />,
+      description: 'Crear descuentos para productos',
+      action: () => setActiveTab('discounts')
+    },
+    {
+      title: 'Crear Combo',
+      icon: <FiGift className="text-2xl" />,
+      description: 'Crear combos de productos',
+      action: () => setActiveTab('combos')
+    },
+    {
+      title: 'Ver Productos',
+      icon: <FiPackage className="text-2xl" />,
+      description: 'Ver todos los productos',
+      action: () => setActiveTab('products')
+    }
+  ]
+
+  // Funciones de gestión de usuarios y administración
+  const adminFunctions = [
+    {
+      title: 'Crear Usuarios Admin',
+      icon: <FiUserCheck className="text-2xl" />,
+      description: 'Crear nuevos administradores',
+      action: () => setActiveTab('admin-users')
+    },
+    {
+      title: 'Ver Ventas',
+      icon: <FiDatabase className="text-2xl" />,
+      description: 'Ver historial de ventas',
+      action: () => setActiveTab('sales')
+    },
+    {
+      title: 'Aprobar Compras',
+      icon: <FiCheckCircle className="text-2xl" />,
+      description: 'Aprobar compras pendientes',
+      action: () => setActiveTab('purchases')
+    },
+    {
+      title: 'Ver Trabajadores',
+      icon: <FiUsers className="text-2xl" />,
+      description: 'Ver lista de trabajadores',
+      action: () => setActiveTab('workers')
+    }
+  ]
+  
+  // Fetch data
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [productsData, categoriesData] = await Promise.all([
+        getAllProducts(),
+        getAllCategories()
+      ])
+      
+      setProducts(productsData)
+      setCategories(categoriesData)
+      setError(null)
+    } catch (err) {
+      setError('Error al cargar los datos')
+      console.error('Error fetching data:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  useEffect(() => {
+    fetchData()
+  }, [])
+  
+  // Handle product form
+  const handleProductChange = (e) => {
+    const { name, value, type, files } = e.target
+    
+    if (type === 'file') {
+      setProductForm({
+        ...productForm,
+        [name]: files[0]
+      })
+    } else {
+      setProductForm({
+        ...productForm,
+        [name]: value
+      })
+    }
+  }
+  
+  const handleProductSubmit = async (e) => {
+    e.preventDefault()
+    
+    try {
+      setLoading(true)
+      
+      const formData = new FormData()
+      Object.keys(productForm).forEach(key => {
+        if (productForm[key] !== null) {
+          formData.append(key, productForm[key])
+        }
+      })
+      
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, formData)
+        setEditingProduct(null)
+      } else {
+        await createProduct(formData)
+      }
+      
+      setProductForm({
+        name: '',
+        description: '',
+        price: '',
+        stock: '',
+        category: '',
+        image: null
+      })
+      
+      await fetchData()
+    } catch (err) {
+      setError('Error al guardar el producto')
+      console.error('Error submitting product:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  const handleEditProduct = (product) => {
+    setEditingProduct(product)
+    setProductForm({
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      stock: product.stock,
+      category: product.category,
+      image: null
+    })
+  }
+  
+  const handleDeleteProduct = async (productId) => {
+    try {
+      setLoading(true)
+      await deleteProduct(productId)
+      await fetchData()
+    } catch (err) {
+      setError('Error al eliminar el producto')
+      console.error('Error deleting product:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  // Handle category form
+  const handleCategoryChange = (e) => {
+    const { name, value } = e.target
+    setCategoryForm({
+      ...categoryForm,
+      [name]: value
+    })
+  }
+  
+  const handleCategorySubmit = async (e) => {
+    e.preventDefault()
+    
+    try {
+      setLoading(true)
+      
+      if (editingCategory) {
+        await updateCategory(editingCategory.slug, categoryForm)
+        setEditingCategory(null)
+      } else {
+        await createCategory(categoryForm)
+      }
+      
+      setCategoryForm({
+        name: '',
+        slug: ''
+      })
+      
+      await fetchData()
+    } catch (err) {
+      setError('Error al guardar la categoría')
+      console.error('Error submitting category:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  const handleEditCategory = (category) => {
+    setEditingCategory(category)
+    setCategoryForm({
+      name: category.name,
+      slug: category.slug
+    })
+  }
+  
+  const handleDeleteCategory = async (categorySlug) => {
+    try {
+      setLoading(true)
+      await deleteCategory(categorySlug)
+      await fetchData()
+    } catch (err) {
+      setError('Error al eliminar la categoría')
+      console.error('Error deleting category:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Render the component
+  return (
+    <>
+      {/* Loading state */}
+      {loading && products.length === 0 && categories.length === 0 && (
+        <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 p-8">
+          {error && (
+            <div className="admin-error">
+              {error}
+              <button 
+                onClick={fetchData} 
+                className="admin-error-refresh"
+              >
+                <FiRefreshCw />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Main dashboard content */}
+      {!loading && (
+        <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 p-8">
+          <h1 className="text-3xl font-orbitron font-bold mb-8 text-white">
+            Panel de Control
+          </h1>
+
+          {error && (
+            <div className="admin-error">
+              {error}
+              <button 
+                onClick={fetchData} 
+                className="admin-error-refresh"
+              >
+                <FiRefreshCw />
+              </button>
+            </div>
+          )}
+
+          {/* Categoría: Gestión de Productos */}
+          <div className="admin-section">
+            <h2 className="admin-category-title">Gestión de Productos</h2>
+            <div className="admin-grid">
+              {productFunctions.map((func, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="admin-card"
+                  onClick={func.action}
+                >
+                  <div className="flex flex-col items-center text-center p-4">
+                    <div className="admin-icon mb-4">{func.icon}</div>
+                    <h3 className="admin-card-title mb-2">{func.title}</h3>
+                    <p className="admin-card-description">{func.description}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Categoría: Gestión de Usuarios y Administración */}
+          <div className="admin-section">
+            <h2 className="admin-category-title">Gestión de Usuarios y Administración</h2>
+            <div className="admin-grid">
+              {adminFunctions.map((func, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="admin-card"
+                  onClick={func.action}
+                >
+                  <div className="flex flex-col items-center text-center p-4">
+                    <div className="admin-icon mb-4">{func.icon}</div>
+                    <h3 className="admin-card-title mb-2">{func.title}</h3>
+                    <p className="admin-card-description">{func.description}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <motion.div 
+            className="mt-12"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            {/* Products Tab */}
+            {activeTab === 'products' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="glassmorphism">
+                  <h2 className="text-xl font-orbitron font-bold p-6 border-b border-white/10 text-white">
+                    {editingProduct ? 'Editar Producto' : 'Agregar Producto'}
+                  </h2>
+                  
+                  <form onSubmit={handleProductSubmit} className="p-6">
+                    <div className="mb-4">
+                      <label className="block text-white/70 mb-2">Nombre</label>
+                      <input 
+                        type="text" 
+                        name="name"
+                        value={productForm.name}
+                        onChange={handleProductChange}
+                        className="w-full bg-black/30 text-white border border-white/10 rounded p-2"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="mb-4">
+                      <label className="block text-white/70 mb-2">Descripción</label>
+                      <textarea 
+                        name="description"
+                        value={productForm.description}
+                        onChange={handleProductChange}
+                        className="w-full bg-black/30 text-white border border-white/10 rounded p-2"
+                        rows="4"
+                        required
+                      ></textarea>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-white/70 mb-2">Precio</label>
+                        <input 
+                          type="number" 
+                          name="price"
+                          value={productForm.price}
+                          onChange={handleProductChange}
+                          className="w-full bg-black/30 text-white border border-white/10 rounded p-2"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-white/70 mb-2">Stock</label>
+                        <input 
+                          type="number" 
+                          name="stock"
+                          value={productForm.stock}
+                          onChange={handleProductChange}
+                          className="w-full bg-black/30 text-white border border-white/10 rounded p-2"
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <label className="block text-white/70 mb-2">Categoría</label>
+                      <select 
+                        name="category"
+                        value={productForm.category}
+                        onChange={handleProductChange}
+                        className="w-full bg-black/30 text-white border border-white/10 rounded p-2"
+                        required
+                      >
+                        <option value="">Seleccionar categoría</option>
+                        {categories.map(category => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="mb-6">
+                      <label className="block text-white/70 mb-2">Imagen</label>
+                      <input 
+                        type="file" 
+                        name="image"
+                        onChange={handleProductChange}
+                        className="w-full bg-black/30 text-white border border-white/10 rounded p-2"
+                        accept="image/*"
+                      />
+                    </div>
+                    
+                    <div className="flex space-x-4">
+                      <button 
+                        type="submit" 
+                        className="btn-primary"
+                      >
+                        {editingProduct ? (
+                          <>
+                            <FiEdit />
+                            <span>Actualizar Producto</span>
+                          </>
+                        ) : (
+                          <>
+                            <FiPlus />
+                            <span>Agregar Producto</span>
+                          </>
+                        )}
+                      </button>
+                      
+                      {editingProduct && (
+                        <button 
+                          type="button" 
+                          className="btn-secondary"
+                          onClick={() => {
+                            setProductForm({
+                              name: '',
+                              description: '',
+                              price: '',
+                              stock: '',
+                              category: '',
+                              image: null
+                            })
+                            setEditingProduct(null)
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
+                
+                <div className="glassmorphism">
+                  <h2 className="text-xl font-orbitron font-bold p-6 border-b border-white/10 text-white">
+                    {editingCategory ? 'Editar Categoría' : 'Agregar Categoría'}
+                  </h2>
+                  
+                  <form onSubmit={handleCategorySubmit} className="p-6">
+                    <div className="mb-4">
+                      <label className="block text-white/70 mb-2">Nombre</label>
+                      <input 
+                        type="text" 
+                        name="name"
+                        value={categoryForm.name}
+                        onChange={handleCategoryChange}
+                        className="w-full bg-black/30 text-white border border-white/10 rounded p-2"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="mb-6">
+                      <label className="block text-white/70 mb-2">Slug</label>
+                      <input 
+                        type="text" 
+                        name="slug"
+                        value={categoryForm.slug}
+                        onChange={handleCategoryChange}
+                        className="w-full bg-black/30 text-white border border-white/10 rounded p-2"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="flex space-x-4">
+                      <button 
+                        type="submit" 
+                        className="btn-primary"
+                      >
+                        {editingCategory ? (
+                          <>
+                            <FiEdit />
+                            <span>Actualizar Categoría</span>
+                          </>
+                        ) : (
+                          <>
+                            <FiPlus />
+                            <span>Agregar Categoría</span>
+                          </>
+                        )}
+                      </button>
+                      
+                      {editingCategory && (
+                        <button 
+                          type="button" 
+                          className="btn-secondary"
+                          onClick={() => {
+                            setCategoryForm({
+                              name: '',
+                              slug: ''
+                            })
+                            setEditingCategory(null)
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
+                
+                <div className="glassmorphism overflow-hidden">
+                  <h2 className="text-xl font-orbitron font-bold p-6 border-b border-white/10 text-white">
+                    Lista de Categorías
+                  </h2>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-white/10">
+                      <thead className="bg-black/30">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Nombre</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Slug</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Productos</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/10">
+                        {categories.length > 0 ? (
+                          categories.map(category => (
+                            <tr key={category.id} className="hover:bg-white/5 transition-colors">
+                              <td className="px-6 py-4 whitespace-nowrap text-white">{category.name}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-white/70">{category.slug}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-white/70">
+                                {products.filter(p => p.category === category.id).length}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex space-x-2">
+                                  <button 
+                                    onClick={() => handleEditCategory(category)}
+                                    className="text-neon-blue hover:text-white transition-colors"
+                                  >
+                                    <FiEdit />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleDeleteCategory(category.slug)}
+                                    className="text-red-400 hover:text-red-500 transition-colors"
+                                  >
+                                    <FiTrash2 />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="4" className="px-6 py-12 text-center text-white/70">
+                              No hay categorías registradas
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
+    </>
+  );
+}
+
+export default AdminDashboard
