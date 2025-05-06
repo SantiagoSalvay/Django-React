@@ -14,6 +14,17 @@
     @apply bg-black/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-lg;
   }
   
+  /* Custom styles for discount carousel */
+  .discount-carousel .slick-dots li button:before {
+    color: theme('colors.rose.500');
+  }
+  
+  .discount-carousel .slick-prev:before,
+  .discount-carousel .slick-next:before {
+    color: theme('colors.rose.500');
+    font-size: 24px;
+  }
+  
   .btn-primary {
     @apply bg-gradient-to-r from-dark-blue to-electric-blue text-white font-orbitron font-bold py-2 px-6 rounded-full 
     shadow-md hover:shadow-neon-blue transition-all duration-300 transform hover:-translate-y-1;

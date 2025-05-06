@@ -11,6 +11,8 @@ import AdminDashboard from './pages/AdminDashboard'
 import NotFoundPage from './pages/NotFoundPage'
 import CheckEmailPage from './pages/CheckEmailPage'
 import EmailVerifiedPage from './pages/EmailVerifiedPage'
+import DiscountedProductsPage from './pages/DiscountedProductsPage'
+import CombosPage from './pages/CombosPage'
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -105,6 +107,20 @@ function App() {
           <ProtectedRoute>
             <MainLayout>
               <PaymentMethodsPage />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/discounted-products" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <DiscountedProductsPage />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/combos" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <CombosPage />
             </MainLayout>
           </ProtectedRoute>
         } />

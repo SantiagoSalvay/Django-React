@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FiArrowRight, FiTrendingUp } from 'react-icons/fi'
+import { FiArrowRight, FiTrendingUp, FiTag, FiPackage } from 'react-icons/fi'
 import { getAllProducts, getAllCategories } from '../api/productApi'
 import ProductCard from '../components/ProductCard'
 import { useAuth } from '../context/AuthContext'
+import Slider from 'react-slick'
+import 'slick-carousel/slick/slick.css'
+import 'slick-carousel/slick/slick-theme.css'
 
 const HomePage = () => {
   const [products, setProducts] = useState([])
@@ -37,6 +40,12 @@ const HomePage = () => {
   
   // Get featured products (first 4)
   const featuredProducts = products.slice(0, 4)
+  
+  // Get products with discounts (next 6 products for demo)
+  const discountedProducts = products.slice(4, 10)
+  
+  // Get combo products (next 4 products for demo)
+  const comboProducts = products.slice(10, 14)
   
   // Animation variants
   const containerVariants = {
@@ -164,7 +173,7 @@ const HomePage = () => {
       </section>
       
       {/* Featured Products */}
-      <section>
+      <section className="mb-16">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-2">
             <FiTrendingUp size={20} className="text-neon-blue" />
@@ -211,6 +220,115 @@ const HomePage = () => {
             </Link>
           </div>
         )}
+      </section>
+      
+      {/* Discounted Products Carousel */}
+      <section className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-2">
+            <FiTag size={20} className="text-rose-500" />
+            <h2 className="text-2xl font-orbitron font-bold text-white">
+              <span className="text-rose-500">🔥</span> Productos con Descuento <span className="text-rose-500">🔥</span>
+            </h2>
+          </div>
+          {isAuthenticated ? (
+            <Link to="/discounted-products" className="text-rose-500 hover:text-rose-400 transition-colors flex items-center space-x-1">
+              <span>Ver más</span>
+              <FiArrowRight size={16} />
+            </Link>
+          ) : (
+            <Link to="/login" className="text-rose-500 hover:text-rose-400 transition-colors flex items-center space-x-1">
+              <span>Iniciar Sesión</span>
+              <FiArrowRight size={16} />
+            </Link>
+          )}
+        </div>
+        
+        <div className="glassmorphism p-6 border-rose-500/30 bg-black/40">
+          {discountedProducts.length > 0 ? (
+            <Slider
+              dots={true}
+              infinite={true}
+              speed={500}
+              slidesToShow={3}
+              slidesToScroll={1}
+              autoplay={true}
+              autoplaySpeed={3000}
+              pauseOnHover={true}
+              responsive={[
+                {
+                  breakpoint: 1024,
+                  settings: {
+                    slidesToShow: 2,
+                    slidesToScroll: 1
+                  }
+                },
+                {
+                  breakpoint: 640,
+                  settings: {
+                    slidesToShow: 1,
+                    slidesToScroll: 1
+                  }
+                }
+              ]}
+              className="discount-carousel"
+            >
+              {discountedProducts.map(product => (
+                <div key={product.id} className="px-2">
+                  <ProductCard product={product} isPreview={!isAuthenticated} />
+                </div>
+              ))}
+            </Slider>
+          ) : (
+            <p className="text-white/60 text-center py-12">
+              No hay productos con descuento disponibles en este momento
+            </p>
+          )}
+        </div>
+      </section>
+      
+      {/* Combo Products */}
+      <section className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-2">
+            <FiPackage size={20} className="text-emerald-400" />
+            <h2 className="text-2xl font-orbitron font-bold text-white">
+              <span className="text-emerald-400">🎁</span> Combos Especiales <span className="text-emerald-400">✨</span>
+            </h2>
+          </div>
+          {isAuthenticated ? (
+            <Link to="/combos" className="text-emerald-400 hover:text-emerald-300 transition-colors flex items-center space-x-1">
+              <span>Ver más</span>
+              <FiArrowRight size={16} />
+            </Link>
+          ) : (
+            <Link to="/login" className="text-emerald-400 hover:text-emerald-300 transition-colors flex items-center space-x-1">
+              <span>Iniciar Sesión</span>
+              <FiArrowRight size={16} />
+            </Link>
+          )}
+        </div>
+        
+        <div className="glassmorphism p-6 border-emerald-500/30 bg-black/40">
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {comboProducts.length > 0 ? (
+              comboProducts.map(product => (
+                <motion.div key={product.id} variants={itemVariants}>
+                  <ProductCard product={product} isPreview={!isAuthenticated} />
+                </motion.div>
+              ))
+            ) : (
+              <p className="text-white/60 col-span-full text-center py-12">
+                No hay combos disponibles en este momento
+              </p>
+            )}
+          </motion.div>
+        </div>
       </section>
     </div>
   )

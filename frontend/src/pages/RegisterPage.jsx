@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FiUser, FiMail, FiLock, FiUserPlus, FiPhone } from 'react-icons/fi'
+import { FiUser, FiMail, FiLock, FiUserPlus, FiPhone, FiHome } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 
 const RegisterPage = () => {
@@ -72,6 +72,16 @@ const RegisterPage = () => {
         transition={{ duration: 0.5 }}
         className="w-full max-w-xl glassmorphism p-8"
       >
+        <div className="flex justify-between items-center mb-6">
+          <Link 
+            to="/" 
+            className="flex items-center space-x-2 px-4 py-2 bg-neon-blue/20 hover:bg-neon-blue/40 text-white rounded-lg transition-colors duration-300"
+          >
+            <FiHome />
+            <span>Volver al Inicio</span>
+          </Link>
+        </div>
+        
         <h2 className="text-3xl font-orbitron font-bold text-center mb-8 text-white">
           Crear Cuenta
         </h2>
