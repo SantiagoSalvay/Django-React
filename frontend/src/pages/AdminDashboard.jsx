@@ -31,6 +31,7 @@ import {
   deleteCategory
 } from '../api/productApi'
 import { createAdminUser, getAdminUsers } from '../api/userApi'
+import { toast } from 'react-toastify'
 
 const AdminDashboard = () => {
   // Data states
@@ -49,6 +50,9 @@ const AdminDashboard = () => {
   const [showProductListModal, setShowProductListModal] = useState(false)
   const [showAdminUserModal, setShowAdminUserModal] = useState(false)
   const [showSalesStatsModal, setShowSalesStatsModal] = useState(false)
+  const [showDiscountedProducts, setShowDiscountedProducts] = useState(false)
+  const [discountedProducts, setDiscountedProducts] = useState([])
+  const [editingDiscount, setEditingDiscount] = useState(null)
   
   // Sales statistics data
   const [salesStats, setSalesStats] = useState({
@@ -154,10 +158,18 @@ const AdminDashboard = () => {
       icon: <FiTag className="text-2xl" />,
       description: 'Crear descuentos para productos',
       action: () => {
-        setSelectedProducts([])
-        setDiscountPercentage(0)
-        setSearchTerm('')
-        setShowDiscountModal(true)
+        if (showDiscountModal) {
+          // Si el modal ya está abierto, lo cerramos y mostramos los productos con descuento
+          setShowDiscountModal(false);
+          getDiscountedProducts();
+          setShowDiscountedProducts(true);
+        } else {
+          // Si el modal no está abierto, lo abrimos normalmente
+          setSelectedProducts([])
+          setDiscountPercentage(0)
+          setSearchTerm('')
+          setShowDiscountModal(true)
+        }
       }
     },
     {
@@ -667,60 +679,67 @@ const AdminDashboard = () => {
   
   const handleApplyDiscount = async () => {
     if (selectedProducts.length === 0 || discountPercentage === 0) {
-      setError('Selecciona al menos un producto y un porcentaje de descuento')
+      toast.error('Selecciona productos y un porcentaje de descuento')
       return
     }
     
     try {
       setLoading(true)
       
-      // Aplicar descuento a cada producto seleccionado
+      const updatedProducts = []
+      
       for (const productId of selectedProducts) {
         const product = products.find(p => p.id === productId)
-        if (product) {
-          const originalPrice = parseFloat(product.price)
-          const discountAmount = originalPrice * (discountPercentage / 100)
-          const discountedPrice = originalPrice - discountAmount
-          
-          console.log(`Aplicando descuento del ${discountPercentage}% al producto ${product.name} (ID: ${productId})`);
-          console.log(`Precio original: $${originalPrice.toFixed(2)}, Precio con descuento: $${discountedPrice.toFixed(2)}`);
-          
-          try {
-            // Crear un objeto simple con solo los campos necesarios
-            const simpleData = {
-              name: product.name,
-              description: product.description || '',
-              price: discountedPrice.toFixed(2),
-              stock: product.stock || 0,
-              category: product.category || ''
-            };
-            
-            console.log('Enviando datos al servidor:', simpleData);
-            
-            // Realizar una solicitud directa con axios
-            await axios.patch(`/api/products/products/${productId}/`, simpleData, {
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
-            
-            console.log(`Descuento aplicado con éxito al producto ${productId}`);
-          } catch (error) {
-            console.error(`Error al aplicar descuento al producto ${productId}:`, error);
-            console.error('Detalles del error:', error.response ? error.response.data : 'No hay detalles disponibles');
-          }
+        
+        if (!product) continue
+        
+        // Guardar precio original si no existe
+        const originalPrice = product.original_price || parseFloat(product.price)
+        
+        // Calcular precio con descuento
+        const discountAmount = originalPrice * (discountPercentage / 100)
+        const discountedPrice = originalPrice - discountAmount
+        
+        console.log(`Aplicando descuento del ${discountPercentage}% al producto ${product.name} (ID: ${productId})`);
+        console.log(`Precio original: $${originalPrice.toFixed(2)}, Precio con descuento: $${discountedPrice.toFixed(2)}`);
+        
+        // Crear objeto de producto actualizado
+        const updatedProduct = {
+          ...product,
+          original_price: originalPrice,
+          price: discountedPrice.toFixed(2),
+          has_discount: true,
+          discount_percentage: discountPercentage
         }
+        
+        // Actualizar producto en la API
+        await updateProduct(productId, updatedProduct)
+        
+        updatedProducts.push(updatedProduct)
       }
       
-      // Cerrar modal y refrescar datos
+      // Actualizar el estado local
+      setProducts(products.map(product => {
+        const updatedProduct = updatedProducts.find(p => p.id === product.id)
+        return updatedProduct || product
+      }))
+      
+      toast.success('Descuentos aplicados correctamente')
+      
+      // Cerrar modal y limpiar estados
       setShowDiscountModal(false)
       setSelectedProducts([])
       setDiscountPercentage(0)
       setSearchTerm('')
-      await fetchData()
       
+      // Si estábamos editando un descuento, actualizamos la lista
+      if (editingDiscount) {
+        setEditingDiscount(null);
+        getDiscountedProducts();
+        setShowDiscountedProducts(true);
+      }
     } catch (err) {
-      setError('Error al aplicar descuentos')
+      toast.error('Error al aplicar descuentos')
       console.error('Error applying discounts:', err)
     } finally {
       setLoading(false)
@@ -901,6 +920,66 @@ const AdminDashboard = () => {
     // Actualizar el valor sin formato para el estado interno
     setter(numericValue)
   }
+
+  // Agregar una función para obtener productos con descuento
+  const getDiscountedProducts = () => {
+    // En un caso real, deberías tener un campo en la base de datos para saber si un producto tiene descuento
+    // Aquí implementamos una versión simplificada asumiendo que cualquier producto cuyo precio no coincida con su precio original tiene un descuento
+    const productsWithDiscount = products.filter(product => {
+      // Esta es una implementación simulada
+      // En un proyecto real, necesitarías un campo en tu base de datos para esto
+      return product.has_discount === true || product.discount_percentage > 0;
+    });
+    
+    setDiscountedProducts(productsWithDiscount);
+  };
+
+  // Agregar una función para modificar un descuento existente
+  const handleEditDiscount = (product) => {
+    setEditingDiscount(product);
+    setSelectedProducts([product.id]);
+    setDiscountPercentage(product.discount_percentage || 0);
+    setSearchTerm('');
+    setShowDiscountedProducts(false);
+    setShowDiscountModal(true);
+  };
+
+  // Agregar una función para eliminar un descuento
+  const handleRemoveDiscount = async (productId) => {
+    try {
+      setLoading(true);
+      
+      // Obtener el producto original
+      const product = products.find(p => p.id === productId);
+      if (!product) {
+        throw new Error('Producto no encontrado');
+      }
+      
+      // Restaurar el precio original
+      const updatedProduct = {
+        ...product,
+        price: product.original_price || product.price,
+        has_discount: false,
+        discount_percentage: 0
+      };
+      
+      // Actualizar el producto en la API
+      await updateProduct(productId, updatedProduct);
+      
+      // Actualizar el estado local
+      setProducts(products.map(p => p.id === productId ? updatedProduct : p));
+      
+      // Actualizar la lista de productos con descuento
+      getDiscountedProducts();
+      
+      toast.success('Descuento eliminado correctamente');
+    } catch (err) {
+      console.error('Error al eliminar descuento:', err);
+      toast.error('Error al eliminar descuento');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Loading state render
   if (loading && products.length === 0 && categories.length === 0) {
@@ -2107,6 +2186,104 @@ const AdminDashboard = () => {
                   }}
                 >
                   Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      
+      {/* Discounted Products Table */}
+      {showDiscountedProducts && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <motion.div 
+            className="glassmorphism w-full max-w-6xl max-h-[90vh] overflow-y-auto"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="flex justify-between items-center p-6 border-b border-white/10">
+              <h2 className="text-xl font-orbitron font-bold text-white">
+                Productos con Descuento
+              </h2>
+              <button 
+                onClick={() => setShowDiscountedProducts(false)}
+                className="text-white/70 hover:text-white text-xl"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {discountedProducts.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-white/10">
+                    <thead className="bg-black/30">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">ID</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Nombre</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Precio Original</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Descuento</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Precio Final</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/10">
+                      {discountedProducts.map(product => (
+                        <tr key={product.id} className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-white">{product.id}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-white">{product.name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-white">${product.original_price?.toFixed(2) || "N/A"}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-green-400">{product.discount_percentage || 0}%</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-white">${parseFloat(product.price).toFixed(2)}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-white">
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleEditDiscount(product)}
+                                className="bg-neon-blue/20 hover:bg-neon-blue/40 text-white px-3 py-1 rounded transition-colors"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => handleRemoveDiscount(product.id)}
+                                className="bg-red-500/20 hover:bg-red-500/40 text-white px-3 py-1 rounded transition-colors"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-white/70">
+                  No hay productos con descuento
+                </div>
+              )}
+              
+              <div className="flex justify-end space-x-4 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setShowDiscountedProducts(false);
+                    setSelectedProducts([]);
+                    setDiscountPercentage(0);
+                    setSearchTerm('');
+                    setShowDiscountModal(true);
+                  }}
+                  className="btn-primary"
+                >
+                  Crear Nuevo Descuento
+                </button>
+                
+                <button 
+                  type="button" 
+                  onClick={() => setShowDiscountedProducts(false)}
+                  className="btn-secondary"
+                >
+                  Cerrar
                 </button>
               </div>
             </div>

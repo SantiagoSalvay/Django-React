@@ -1,5 +1,8 @@
+import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import MainLayout from './components/MainLayout'
 import HomePage from './pages/HomePage'
 import ProductsPage from './pages/ProductsPage'
@@ -21,8 +24,9 @@ const ProtectedRoute = ({ children }) => {
   
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-neon-blue"></div>
+      <div className="flex flex-col items-center justify-center h-screen bg-black">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-neon-blue mb-4"></div>
+        <p className="text-white text-lg font-orbitron">Verificando autenticación...</p>
       </div>
     )
   }
@@ -40,8 +44,9 @@ const AdminRoute = ({ children }) => {
   
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-neon-blue"></div>
+      <div className="flex flex-col items-center justify-center h-screen bg-black">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-neon-blue mb-4"></div>
+        <p className="text-white text-lg font-orbitron">Verificando permisos de administrador...</p>
       </div>
     )
   }
@@ -60,8 +65,9 @@ const SuperAdminRoute = ({ children }) => {
   
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-neon-blue"></div>
+      <div className="flex flex-col items-center justify-center h-screen bg-black">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-neon-blue mb-4"></div>
+        <p className="text-white text-lg font-orbitron">Verificando permisos de superadmin...</p>
       </div>
     )
   }
@@ -75,8 +81,73 @@ const SuperAdminRoute = ({ children }) => {
 }
 
 function App() {
+  const [isAppReady, setIsAppReady] = useState(false);
+  const { loading: authLoading } = useAuth();
+  
+  // Simular tiempo de carga para asegurar que todos los componentes estén listos
+  useEffect(() => {
+    // Dar un tiempo mínimo de carga inicial para evitar parpadeos
+    const minLoadTime = 1500; // 1.5 segundos mínimo
+    const startTime = Date.now();
+    
+    const checkAndSetReady = () => {
+      // Calcular cuánto tiempo ha pasado desde que empezamos a cargar
+      const elapsedTime = Date.now() - startTime;
+      
+      // Si todavía estamos cargando la autenticación, esperamos
+      if (authLoading) {
+        console.log('Esperando a que se complete la autenticación...');
+        // Programar otra verificación en 500ms
+        setTimeout(checkAndSetReady, 500);
+        return;
+      }
+      
+      // Si no ha pasado el tiempo mínimo, esperamos la diferencia
+      if (elapsedTime < minLoadTime) {
+        const remainingTime = minLoadTime - elapsedTime;
+        console.log(`Esperando ${remainingTime}ms adicionales para completar el tiempo mínimo de carga`);
+        setTimeout(() => {
+          setIsAppReady(true);
+          console.log('Aplicación lista para renderizar después del tiempo mínimo');
+        }, remainingTime);
+      } else {
+        // Si ya pasó el tiempo mínimo y no estamos cargando auth, estamos listos
+        setIsAppReady(true);
+        console.log('Aplicación lista para renderizar');
+      }
+    };
+    
+    // Iniciar el proceso de verificación
+    checkAndSetReady();
+    
+    // No es necesario limpiar este efecto ya que solo se ejecuta una vez
+  }, [authLoading]);
+  
+  // Mostrar un estado de carga mientras la aplicación se inicializa
+  if (!isAppReady) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-black">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-cyan-400 mb-4"></div>
+        <p className="text-white text-lg font-orbitron">Cargando Todo Electro...</p>
+        <p className="text-white/60 text-sm mt-2">Preparando la mejor experiencia para ti</p>
+      </div>
+    );
+  }
+  
   return (
     <div className="app-container">
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
       <Routes>
         {/* Rutas sin Navbar */}
         <Route path="/login" element={<LoginPage />} />
@@ -111,7 +182,7 @@ function App() {
             </MainLayout>
           </ProtectedRoute>
         } />
-        <Route path="/discounted-products" element={
+        <Route path="/discounted" element={
           <ProtectedRoute>
             <MainLayout>
               <DiscountedProductsPage />
@@ -127,14 +198,20 @@ function App() {
         } />
         <Route path="/profile" element={
           <ProtectedRoute>
-            <ProfilePage />
+            <MainLayout>
+              <ProfilePage />
+            </MainLayout>
           </ProtectedRoute>
         } />
-        <Route path="/admin/*" element={
+        
+        {/* Rutas de administración */}
+        <Route path="/admin" element={
           <AdminRoute>
             <AdminDashboard />
           </AdminRoute>
         } />
+        
+        {/* Ruta 404 */}
         <Route path="*" element={
           <MainLayout>
             <NotFoundPage />

@@ -5,47 +5,56 @@ import { FiArrowRight, FiTrendingUp, FiTag, FiPackage } from 'react-icons/fi'
 import { getAllProducts, getAllCategories } from '../api/productApi'
 import ProductCard from '../components/ProductCard'
 import { useAuth } from '../context/AuthContext'
+import useRefresh from '../hooks/useRefresh'
 import Slider from 'react-slick'
 import 'slick-carousel/slick/slick.css'
 import 'slick-carousel/slick/slick-theme.css'
 
 const HomePage = () => {
-  const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const { isAuthenticated } = useAuth()
   
+  // Usar el hook personalizado para obtener y actualizar productos automáticamente
+  const { 
+    data: productsData, 
+    loading, 
+    error 
+  } = useRefresh(getAllProducts, { 
+    interval: 15000, // Actualizar cada 15 segundos
+    debug: true // Activar logs para depuración
+  }) 
+  
+  // Asegurar que products siempre sea un array
+  const products = productsData || []
+  
+  // Obtener categorías (solo una vez al cargar la página)
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCategories = async () => {
       try {
-        setLoading(true)
-        const [productsData, categoriesData] = await Promise.all([
-          getAllProducts(),
-          getAllCategories()
-        ])
-        
-        setProducts(productsData)
+        const categoriesData = await getAllCategories()
         setCategories(categoriesData)
       } catch (err) {
-        setError('Error al cargar los datos')
-        console.error('Error fetching data:', err)
-      } finally {
-        setLoading(false)
+        console.error('Error fetching categories:', err)
       }
     }
     
-    fetchData()
+    fetchCategories()
   }, [])
   
-  // Get featured products (first 4)
-  const featuredProducts = products.slice(0, 4)
+  // Get featured products (primeros productos que no sean combos ni tengan descuento)
+  const featuredProducts = products
+    .filter(product => !product.has_discount && !product.is_combo)
+    .slice(0, 4)
   
-  // Get products with discounts (next 6 products for demo)
-  const discountedProducts = products.slice(4, 10)
+  // Get products with discounts
+  const discountedProducts = products
+    .filter(product => product.has_discount || product.discount_percentage > 0)
+    .slice(0, 8)
   
-  // Get combo products (next 4 products for demo)
-  const comboProducts = products.slice(10, 14)
+  // Get combo products
+  const comboProducts = products
+    .filter(product => product.is_combo)
+    .slice(0, 4)
   
   // Animation variants
   const containerVariants = {
@@ -69,107 +78,72 @@ const HomePage = () => {
     }
   }
   
-  if (loading) {
+  if (loading && !products.length) {
     return (
       <div className="flex items-center justify-center h-[70vh]">
-        <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-t-2 border-b-2 border-neon-blue"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-neon-blue"></div>
+        <p className="ml-4 text-white font-orbitron">Cargando productos...</p>
       </div>
     )
   }
   
-  if (error) {
+  if (error && !products.length) {
     return (
-      <div className="text-center py-12 md:py-20">
-        <h2 className="text-xl md:text-2xl font-orbitron text-red-400 mb-4">Error</h2>
+      <div className="text-center py-20">
+        <h2 className="text-2xl font-orbitron text-red-400 mb-4">Error</h2>
         <p className="text-white/70">{error}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-4 px-4 py-2 bg-neon-blue text-white rounded-md hover:bg-neon-blue/80 transition"
+        >
+          Reintentar
+        </button>
       </div>
     )
   }
   
   return (
-    <div className="mt-16 sm:mt-20">
+    <div className="mt-20">
       {/* Hero Section */}
-      <section className="relative overflow-hidden mb-8 sm:mb-16 rounded-2xl glassmorphism">
-        <div className="absolute inset-0 z-0 bg-gradient-to-r from-black/80 to-black/40"></div>
-        
-        <div className="relative z-10 px-4 sm:px-6 py-10 sm:py-16 md:py-24 max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-orbitron font-bold mb-4 sm:mb-6 text-white">
-              <span className="block">El Futuro de la Tecnología</span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple">
-                En Tu Hogar
-              </span>
-            </h1>
-            
-            <p className="text-base sm:text-lg md:text-xl text-white/80 max-w-2xl mb-6 sm:mb-8">
-              Descubre la más amplia selección de electrodomésticos con tecnología de punta, 
-              diseño elegante y precios increíbles.
-            </p>
-            
-            {isAuthenticated ? (
-              <Link to="/products" className="btn-primary inline-flex items-center space-x-2 text-sm sm:text-base py-2 px-4 sm:py-2 sm:px-6">
-                <span>Ver Productos</span>
-                <FiArrowRight />
-              </Link>
-            ) : (
-              <Link to="/login" className="btn-primary inline-flex items-center space-x-2 text-sm sm:text-base py-2 px-4 sm:py-2 sm:px-6">
-                <span>Iniciar Sesión</span>
-                <FiArrowRight />
-              </Link>
-            )}
-          </motion.div>
-        </div>
-      </section>
-      
-      {/* Categories Section */}
       <section className="mb-10 sm:mb-16">
-        <div className="flex items-center justify-between mb-4 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-orbitron font-bold text-white">Categorías</h2>
-          {isAuthenticated ? (
-            <Link to="/products" className="text-neon-blue hover:text-neon-purple transition-colors flex items-center space-x-1 text-sm sm:text-base">
-              <span>Ver todas</span>
-              <FiArrowRight size={16} />
-            </Link>
-          ) : (
-            <Link to="/login" className="text-neon-blue hover:text-neon-purple transition-colors flex items-center space-x-1 text-sm sm:text-base">
-              <span>Iniciar Sesión</span>
-              <FiArrowRight size={16} />
-            </Link>
-          )}
-        </div>
-        
-        <motion.div 
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {categories.map(category => (
-            <motion.div 
-              key={category.id}
-              variants={itemVariants}
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            >
-              {isAuthenticated ? (
-                <Link 
-                  to={`/category/${category.slug}`} 
-                  className="glassmorphism block p-3 sm:p-6 text-center hover:border-neon-blue/50 transition-all"
-                >
-                  <h3 className="font-orbitron text-sm sm:text-base text-white truncate">{category.name}</h3>
+        <div className="glassmorphism p-6 sm:p-10 border-neon-blue/30 bg-black/50">
+          <div className="flex flex-col lg:flex-row items-center">
+            <div className="lg:w-1/2 mb-6 lg:mb-0">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-orbitron font-bold text-white mb-4 leading-tight">
+                Tecnología de <span className="text-neon-blue">Vanguardia</span> a tu Alcance
+              </h1>
+              <p className="text-white/80 text-base sm:text-lg mb-6">
+                Descubre los mejores productos tecnológicos con ofertas exclusivas y envíos a todo el país. Encuentra smartphones, laptops, accesorios y mucho más.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Link to="/products" className="btn-primary">
+                  Ver Productos
                 </Link>
-              ) : (
-                <div className="glassmorphism block p-3 sm:p-6 text-center">
-                  <h3 className="font-orbitron text-sm sm:text-base text-white truncate">{category.name}</h3>
+                <Link to="/about" className="btn-secondary">
+                  Conoce más
+                </Link>
+              </div>
+            </div>
+            <div className="lg:w-1/2 lg:pl-10">
+              <div className="relative">
+                <div className="glassmorphism rounded-2xl overflow-hidden border-neon-blue/30 shadow-lg shadow-neon-blue/20">
+                  <img 
+                    src="/hero-image.jpg" 
+                    alt="Latest Technology Products" 
+                    className="w-full h-auto object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null
+                      e.target.src = 'https://via.placeholder.com/800x400?text=Tecnología+Avanzada'
+                    }}
+                  />
                 </div>
-              )}
-            </motion.div>
-          ))}
-        </motion.div>
+                <div className="absolute -bottom-4 -right-4 bg-neon-blue/90 text-white p-3 rounded-lg shadow-lg transform rotate-3">
+                  <p className="text-lg sm:text-xl font-orbitron font-bold">¡Ofertas Exclusivas!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
       
       {/* Featured Products */}
@@ -210,29 +184,19 @@ const HomePage = () => {
             </p>
           )}
         </motion.div>
-        
-        {!isAuthenticated && (
-          <div className="mt-8 sm:mt-12 text-center">
-            <p className="text-white/80 mb-4 text-sm sm:text-base">Inicia sesión para ver más detalles y comprar productos</p>
-            <Link to="/login" className="btn-primary inline-flex items-center space-x-2 text-sm sm:text-base py-2 px-4 sm:py-2 sm:px-6">
-              <span>Iniciar Sesión</span>
-              <FiArrowRight />
-            </Link>
-          </div>
-        )}
       </section>
       
-      {/* Discounted Products Carousel */}
+      {/* Discounted Products */}
       <section className="mb-10 sm:mb-16">
         <div className="flex items-center justify-between mb-4 sm:mb-8">
           <div className="flex items-center space-x-2">
             <FiTag size={20} className="text-rose-500" />
             <h2 className="text-xl sm:text-2xl font-orbitron font-bold text-white">
-              <span className="text-rose-500">🔥</span> Productos con Descuento <span className="text-rose-500">🔥</span>
+              <span className="text-rose-500">🔥</span> Ofertas y Descuentos <span className="text-rose-500">🔥</span>
             </h2>
           </div>
           {isAuthenticated ? (
-            <Link to="/discounted-products" className="text-rose-500 hover:text-rose-400 transition-colors flex items-center space-x-1 text-sm sm:text-base">
+            <Link to="/discounted" className="text-rose-500 hover:text-rose-400 transition-colors flex items-center space-x-1 text-sm sm:text-base">
               <span>Ver más</span>
               <FiArrowRight size={16} />
             </Link>

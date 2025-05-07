@@ -1,36 +1,24 @@
-import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { FiTag } from 'react-icons/fi'
 import { getAllProducts } from '../api/productApi'
 import ProductCard from '../components/ProductCard'
 import { useAuth } from '../context/AuthContext'
+import useRefresh from '../hooks/useRefresh'
 
 const DiscountedProductsPage = () => {
-  const [products, setProducts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const { isAuthenticated } = useAuth()
   
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        const productsData = await getAllProducts()
-        
-        // For demo purposes, we'll just use a subset of products as "discounted"
-        // In a real app, you would filter products with a discount field
-        const discountedProducts = productsData.slice(4, 16)
-        setProducts(discountedProducts)
-      } catch (err) {
-        setError('Error al cargar los productos con descuento')
-        console.error('Error fetching discounted products:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    fetchData()
-  }, [])
+  // Usar hook personalizado para obtener datos actualizados
+  const { 
+    data: productsData = [], 
+    loading, 
+    error 
+  } = useRefresh(getAllProducts, 20000) // Actualizar cada 20 segundos
+  
+  // Filtrar productos con descuento
+  const products = productsData.filter(
+    product => product.has_discount || product.discount_percentage > 0
+  )
   
   // Animation variants
   const containerVariants = {
@@ -54,7 +42,7 @@ const DiscountedProductsPage = () => {
     }
   }
   
-  if (loading) {
+  if (loading && !products.length) {
     return (
       <div className="flex items-center justify-center h-[70vh]">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-rose-500"></div>
@@ -62,7 +50,7 @@ const DiscountedProductsPage = () => {
     )
   }
   
-  if (error) {
+  if (error && !products.length) {
     return (
       <div className="text-center py-20">
         <h2 className="text-2xl font-orbitron text-red-400 mb-4">Error</h2>

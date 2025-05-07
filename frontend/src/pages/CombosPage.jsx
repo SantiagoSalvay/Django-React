@@ -1,36 +1,22 @@
-import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { FiPackage } from 'react-icons/fi'
 import { getAllProducts } from '../api/productApi'
 import ProductCard from '../components/ProductCard'
 import { useAuth } from '../context/AuthContext'
+import useRefresh from '../hooks/useRefresh'
 
 const CombosPage = () => {
-  const [products, setProducts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const { isAuthenticated } = useAuth()
   
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        const productsData = await getAllProducts()
-        
-        // For demo purposes, we'll just use a subset of products as "combos"
-        // In a real app, you would filter products with a combo field
-        const comboProducts = productsData.slice(10, 18)
-        setProducts(comboProducts)
-      } catch (err) {
-        setError('Error al cargar los combos')
-        console.error('Error fetching combo products:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    fetchData()
-  }, [])
+  // Usar hook personalizado para obtener datos actualizados
+  const { 
+    data: productsData = [], 
+    loading, 
+    error 
+  } = useRefresh(getAllProducts, 20000) // Actualizar cada 20 segundos
+  
+  // Filtrar productos que son combos
+  const products = productsData.filter(product => product.is_combo)
   
   // Animation variants
   const containerVariants = {
@@ -54,7 +40,7 @@ const CombosPage = () => {
     }
   }
   
-  if (loading) {
+  if (loading && !products.length) {
     return (
       <div className="flex items-center justify-center h-[70vh]">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-emerald-400"></div>
@@ -62,7 +48,7 @@ const CombosPage = () => {
     )
   }
   
-  if (error) {
+  if (error && !products.length) {
     return (
       <div className="text-center py-20">
         <h2 className="text-2xl font-orbitron text-red-400 mb-4">Error</h2>
