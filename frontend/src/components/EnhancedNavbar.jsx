@@ -35,6 +35,11 @@ const EnhancedNavbar = () => {
         setCategories(data)
       } catch (error) {
         console.error('Error fetching categories:', error)
+        // Si hay un error de conexión, establecer un array vacío para evitar errores en la UI
+        setCategories([])
+        
+        // No mostrar el dropdown de categorías si hay un error
+        setShowCategoryDropdown(false)
       }
     }
     
