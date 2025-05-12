@@ -1,0 +1,3 @@
+@echo off
+echo Iniciando servidor Django sin mensajes de advertencia...
+python manage.py runserver 2>&1 | findstr /v "WARNING: This is a development server" | findstr /v "For more information on production servers"

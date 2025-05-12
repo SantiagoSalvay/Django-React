@@ -198,9 +198,7 @@ function App() {
         } />
         <Route path="/profile" element={
           <ProtectedRoute>
-            <MainLayout>
-              <ProfilePage />
-            </MainLayout>
+            <ProfilePage />
           </ProtectedRoute>
         } />
         
