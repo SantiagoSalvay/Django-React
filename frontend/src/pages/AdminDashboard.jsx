@@ -692,7 +692,7 @@ const AdminDashboard = () => {
         if (!product) continue
         
         // Guardar precio original si no existe
-        const originalPrice = product.original_price || parseFloat(product.price)
+        const originalPrice = product.original_price ? Number(product.original_price) : Number(product.price)
         
         // Calcular precio con descuento
         const discountAmount = originalPrice * (discountPercentage / 100)
@@ -937,11 +937,10 @@ const AdminDashboard = () => {
   }
 
   // Agregar una función para obtener productos con descuento
-  const getDiscountedProducts = () => {
-    const productsWithDiscount = products.filter(product => {
-      return product.has_discount === true || product.discount_percentage > 0 || product.original_price !== null;
+  const getDiscountedProducts = (productsList = products) => {
+    const productsWithDiscount = productsList.filter(product => {
+      return product.has_discount === true || Number(product.discount_percentage) > 0;
     });
-    
     setDiscountedProducts(productsWithDiscount);
   };
 
@@ -959,34 +958,46 @@ const AdminDashboard = () => {
   const handleRemoveDiscount = async (productId) => {
     try {
       setLoading(true);
-      
+
       // Obtener el producto original
       const product = products.find(p => p.id === productId);
       if (!product) {
         throw new Error('Producto no encontrado');
       }
-      
-      // Restaurar el precio original
+
+      // Restaurar el precio original, asegurando que sea un número válido
+      const originalPrice = product.original_price ? Number(product.original_price) : Number(product.price);
+
       const updatedProduct = {
         ...product,
-        price: product.original_price || product.price,
+        price: originalPrice,
+        original_price: originalPrice,
         has_discount: false,
         discount_percentage: 0
       };
-      
-      // Actualizar el producto en la API
+
+      // Elimina campos que no deben ir en el PUT si existen (como id, image si es un archivo, etc.)
+      delete updatedProduct.id;
+      if (!updatedProduct.image || typeof updatedProduct.image === 'string') {
+        delete updatedProduct.image;
+      }
+
       await updateProduct(productId, updatedProduct);
-      
-      // Actualizar el estado local
-      setProducts(products.map(p => p.id === productId ? updatedProduct : p));
-      
-      // Actualizar la lista de productos con descuento
-      getDiscountedProducts();
-      
+
+      // Actualiza el array de productos y la tabla de descuentos usando el nuevo array
+      const newProducts = products.map(p => p.id === productId ? updatedProduct : p);
+      setProducts(newProducts);
+      getDiscountedProducts(newProducts);
       toast.success('Descuento eliminado correctamente');
     } catch (err) {
+      // Mostrar el error real del backend
       console.error('Error al eliminar descuento:', err);
-      toast.error('Error al eliminar descuento');
+      if (err.response && err.response.data) {
+        console.error('Detalle del error del backend:', err.response.data);
+        toast.error('Error al eliminar descuento: ' + JSON.stringify(err.response.data));
+      } else {
+        toast.error('Error al eliminar descuento');
+      }
     } finally {
       setLoading(false);
     }
