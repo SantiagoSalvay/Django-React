@@ -49,7 +49,11 @@ const HomePage = () => {
   
   // Get products with discounts
   const discountedProducts = products
-    .filter(product => product.has_discount || product.discount_percentage > 0)
+    .filter(product => {
+      const hasDiscount = product.has_discount === true || product.discount_percentage > 0
+      const hasOriginalPrice = product.original_price && parseFloat(product.original_price) > parseFloat(product.price)
+      return hasDiscount && hasOriginalPrice
+    })
     .slice(0, 8)
   
   // Get combo products

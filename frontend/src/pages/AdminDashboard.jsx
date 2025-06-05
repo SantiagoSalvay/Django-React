@@ -158,18 +158,16 @@ const AdminDashboard = () => {
       icon: <FiTag className="text-2xl" />,
       description: 'Crear descuentos para productos',
       action: () => {
-        if (showDiscountModal) {
-          // Si el modal ya está abierto, lo cerramos y mostramos los productos con descuento
-          setShowDiscountModal(false);
-          getDiscountedProducts();
-          setShowDiscountedProducts(true);
-        } else {
-          // Si el modal no está abierto, lo abrimos normalmente
-          setSelectedProducts([])
-          setDiscountPercentage(0)
-          setSearchTerm('')
-          setShowDiscountModal(true)
-        }
+        // Resetear estados
+        setSelectedProducts([])
+        setDiscountPercentage(0)
+        setSearchTerm('')
+        
+        // Cargar productos con descuento
+        getDiscountedProducts()
+        
+        // Mostrar el modal
+        setShowDiscountModal(true)
       }
     },
     {
@@ -705,42 +703,58 @@ const AdminDashboard = () => {
         
         // Crear objeto de producto actualizado
         const updatedProduct = {
-          ...product,
-          original_price: originalPrice,
+          name: product.name,
+          description: product.description,
           price: discountedPrice.toFixed(2),
+          original_price: originalPrice.toFixed(2),
           has_discount: true,
-          discount_percentage: discountPercentage
+          discount_percentage: discountPercentage,
+          stock: product.stock,
+          category: product.category
         }
         
-        // Actualizar producto en la API
-        await updateProduct(productId, updatedProduct)
-        
-        updatedProducts.push(updatedProduct)
+        try {
+          // Actualizar producto en la API
+          const response = await updateProduct(productId, updatedProduct)
+          console.log('Respuesta del servidor:', response)
+          
+          updatedProducts.push({
+            ...product,
+            ...response
+          })
+        } catch (error) {
+          console.error('Error completo:', error)
+          const errorMessage = error.response?.data?.detail || 
+                             error.response?.data?.error || 
+                             error.message || 
+                             JSON.stringify(error.response?.data)
+          toast.error(`Error al actualizar ${product.name}: ${errorMessage}`)
+          continue
+        }
       }
       
-      // Actualizar el estado local
-      setProducts(products.map(product => {
-        const updatedProduct = updatedProducts.find(p => p.id === product.id)
-        return updatedProduct || product
-      }))
-      
-      toast.success('Descuentos aplicados correctamente')
-      
-      // Cerrar modal y limpiar estados
-      setShowDiscountModal(false)
-      setSelectedProducts([])
-      setDiscountPercentage(0)
-      setSearchTerm('')
-      
-      // Si estábamos editando un descuento, actualizamos la lista
-      if (editingDiscount) {
-        setEditingDiscount(null);
-        getDiscountedProducts();
-        setShowDiscountedProducts(true);
+      if (updatedProducts.length > 0) {
+        setProducts(products.map(product => {
+          const updatedProduct = updatedProducts.find(p => p.id === product.id)
+          return updatedProduct || product
+        }))
+        
+        toast.success('Descuentos aplicados correctamente')
+        
+        // Actualizar la lista de productos con descuento
+        getDiscountedProducts()
+        
+        setSelectedProducts([])
+        setDiscountPercentage(0)
+        setSearchTerm('')
       }
     } catch (err) {
-      toast.error('Error al aplicar descuentos')
-      console.error('Error applying discounts:', err)
+      console.error('Error completo:', err)
+      const errorMessage = err.response?.data?.detail || 
+                          err.response?.data?.error || 
+                          err.message || 
+                          JSON.stringify(err.response?.data)
+      toast.error('Error al aplicar descuentos: ' + errorMessage)
     } finally {
       setLoading(false)
     }
@@ -751,6 +765,7 @@ const AdminDashboard = () => {
     setSelectedProducts([])
     setDiscountPercentage(0)
     setSearchTerm('')
+    setEditingDiscount(null)
   }
   
   // Funciones para el modal de combos
@@ -923,12 +938,8 @@ const AdminDashboard = () => {
 
   // Agregar una función para obtener productos con descuento
   const getDiscountedProducts = () => {
-    // En un caso real, deberías tener un campo en la base de datos para saber si un producto tiene descuento
-    // Aquí implementamos una versión simplificada asumiendo que cualquier producto cuyo precio no coincida con su precio original tiene un descuento
     const productsWithDiscount = products.filter(product => {
-      // Esta es una implementación simulada
-      // En un proyecto real, necesitarías un campo en tu base de datos para esto
-      return product.has_discount === true || product.discount_percentage > 0;
+      return product.has_discount === true || product.discount_percentage > 0 || product.original_price !== null;
     });
     
     setDiscountedProducts(productsWithDiscount);
@@ -1315,14 +1326,14 @@ const AdminDashboard = () => {
       {showDiscountModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <motion.div 
-            className="glassmorphism w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+            className="glassmorphism w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-gray-900"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
           >
             <div className="flex justify-between items-center p-6 border-b border-white/10">
               <h2 className="text-xl font-orbitron font-bold text-white">
-                Crear Descuentos
+                Gestión de Descuentos
               </h2>
               <button 
                 onClick={handleCloseDiscountModal}
@@ -1333,133 +1344,175 @@ const AdminDashboard = () => {
             </div>
             
             <div className="p-6">
-              {/* Discount Percentage Buttons */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Selecciona el Porcentaje de Descuento</h3>
-                <div className="flex flex-wrap gap-4">
-                  <button 
-                    type="button"
-                    className={`px-6 py-3 rounded-lg font-bold transition-colors ${discountPercentage === 15 ? 'bg-green-600 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'}`}
-                    onClick={() => handleDiscountSelection(15)}
-                  >
-                    15% Descuento
-                  </button>
-                  <button 
-                    type="button"
-                    className={`px-6 py-3 rounded-lg font-bold transition-colors ${discountPercentage === 25 ? 'bg-green-600 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'}`}
-                    onClick={() => handleDiscountSelection(25)}
-                  >
-                    25% Descuento
-                  </button>
-                  <button 
-                    type="button"
-                    className={`px-6 py-3 rounded-lg font-bold transition-colors ${discountPercentage === 50 ? 'bg-green-600 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'}`}
-                    onClick={() => handleDiscountSelection(50)}
-                  >
-                    50% Descuento
-                  </button>
-                  <button 
-                    type="button"
-                    className={`px-6 py-3 rounded-lg font-bold transition-colors ${discountPercentage === 75 ? 'bg-green-600 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'}`}
-                    onClick={() => handleDiscountSelection(75)}
-                  >
-                    75% Descuento
-                  </button>
-                </div>
-              </div>
-              
-              {/* Product Search */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Selecciona los Productos</h3>
-                <div className="mb-4">
-                  <input 
-                    type="text"
-                    placeholder="Buscar por nombre o ID de producto..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-black/30 text-white border border-white/10 rounded p-3"
-                  />
-                </div>
-                
-                {/* Selected Products Count */}
-                <div className="mb-4 text-white">
-                  <p>{selectedProducts.length} productos seleccionados</p>
-                </div>
-                
-                {/* Products List */}
-                <div className="overflow-y-auto max-h-80 border border-white/10 rounded">
-                  <table className="min-w-full divide-y divide-white/10">
-                    <thead className="bg-black/30">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Seleccionar</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">ID</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Nombre</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Precio Original</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Precio con Descuento</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/10">
-                      {filteredProducts().length > 0 ? (
-                        filteredProducts().map(product => {
-                          const isSelected = selectedProducts.includes(product.id)
-                          const originalPrice = parseFloat(product.price)
-                          const discountAmount = originalPrice * (discountPercentage / 100)
-                          const discountedPrice = originalPrice - discountAmount
-                          
-                          return (
-                            <tr 
-                              key={product.id} 
-                              className={`hover:bg-white/5 transition-colors cursor-pointer ${isSelected ? 'bg-green-900/20' : ''}`}
-                              onClick={() => handleProductSelection(product.id)}
-                            >
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <input 
-                                  type="checkbox" 
-                                  checked={isSelected}
-                                  onChange={() => {}} // Controlado por el onClick del tr
-                                  className="h-5 w-5"
-                                />
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-white">{product.id}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-white">{product.name}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-white">${originalPrice.toFixed(2)}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-white">
-                                {discountPercentage > 0 ? (
-                                  <span className="text-green-400">${discountedPrice.toFixed(2)}</span>
-                                ) : '-'}
+              <div className="grid grid-cols-2 gap-6">
+                {/* Left side - Discount Options */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4">Aplicar Descuento</h3>
+                    <div className="flex flex-wrap gap-4">
+                      <button 
+                        type="button"
+                        className={`px-6 py-3 rounded-lg font-bold transition-colors ${discountPercentage === 15 ? 'bg-green-600 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'}`}
+                        onClick={() => handleDiscountSelection(15)}
+                      >
+                        15% Descuento
+                      </button>
+                      <button 
+                        type="button"
+                        className={`px-6 py-3 rounded-lg font-bold transition-colors ${discountPercentage === 25 ? 'bg-green-600 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'}`}
+                        onClick={() => handleDiscountSelection(25)}
+                      >
+                        25% Descuento
+                      </button>
+                      <button 
+                        type="button"
+                        className={`px-6 py-3 rounded-lg font-bold transition-colors ${discountPercentage === 50 ? 'bg-green-600 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'}`}
+                        onClick={() => handleDiscountSelection(50)}
+                      >
+                        50% Descuento
+                      </button>
+                      <button 
+                        type="button"
+                        className={`px-6 py-3 rounded-lg font-bold transition-colors ${discountPercentage === 75 ? 'bg-green-600 text-white' : 'bg-black/30 text-white/70 hover:bg-black/50 hover:text-white'}`}
+                        onClick={() => handleDiscountSelection(75)}
+                      >
+                        75% Descuento
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4">Seleccionar Productos</h3>
+                    <div className="mb-4">
+                      <input
+                        type="text"
+                        placeholder="Buscar productos..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-black/30 text-white border border-white/10 rounded p-2"
+                      />
+                    </div>
+                    <div className="overflow-y-auto max-h-[400px]">
+                      <table className="min-w-full divide-y divide-white/10">
+                        <thead className="bg-black/30">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Seleccionar</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">ID</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Nombre</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Precio</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Precio con Descuento</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/10">
+                          {filteredProducts().length > 0 ? (
+                            filteredProducts().map(product => {
+                              const isSelected = selectedProducts.includes(product.id)
+                              const originalPrice = parseFloat(product.price)
+                              const discountAmount = originalPrice * (discountPercentage / 100)
+                              const discountedPrice = originalPrice - discountAmount
+                              
+                              return (
+                                <tr 
+                                  key={product.id} 
+                                  className={`hover:bg-white/5 transition-colors cursor-pointer ${isSelected ? 'bg-green-900/20' : ''}`}
+                                  onClick={() => handleProductSelection(product.id)}
+                                >
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <input 
+                                      type="checkbox" 
+                                      checked={isSelected}
+                                      onChange={() => {}} // Controlado por el onClick del tr
+                                      className="h-5 w-5"
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-white">{product.id}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-white">{product.name}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-white">${originalPrice.toFixed(2)}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-white">
+                                    {discountPercentage > 0 ? (
+                                      <span className="text-green-400">${discountedPrice.toFixed(2)}</span>
+                                    ) : '-'}
+                                  </td>
+                                </tr>
+                              )
+                            })
+                          ) : (
+                            <tr>
+                              <td colSpan="5" className="px-6 py-12 text-center text-white/70">
+                                No se encontraron productos
                               </td>
                             </tr>
-                          )
-                        })
-                      ) : (
-                        <tr>
-                          <td colSpan="5" className="px-6 py-12 text-center text-white/70">
-                            No se encontraron productos
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button 
+                      type="button" 
+                      onClick={handleApplyDiscount}
+                      className="btn-primary"
+                      disabled={selectedProducts.length === 0 || discountPercentage === 0}
+                    >
+                      Aplicar Descuento
+                    </button>
+                  </div>
                 </div>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-4 mt-6">
-                <button 
-                  type="button" 
-                  onClick={handleCloseDiscountModal}
-                  className="btn-secondary"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="button" 
-                  onClick={handleApplyDiscount}
-                  className="btn-primary"
-                  disabled={selectedProducts.length === 0 || discountPercentage === 0}
-                >
-                  Aplicar Descuento
-                </button>
+
+                {/* Right side - Discounted Products List */}
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4">Productos con Descuento</h3>
+                  <div className="overflow-y-auto max-h-[600px]">
+                    {discountedProducts.length > 0 ? (
+                      <table className="min-w-full divide-y divide-white/10">
+                        <thead className="bg-black/30">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">ID</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Nombre</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Precio Original</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Descuento</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Precio Final</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/10">
+                          {discountedProducts.map(product => (
+                            <tr key={product.id} className="hover:bg-white/5 transition-colors">
+                              <td className="px-6 py-4 whitespace-nowrap text-white">{product.id}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-white">{product.name}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-white">
+                                {product.original_price ? `$${Number(product.original_price).toFixed(2)}` : "N/A"}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-green-400">{product.discount_percentage || 0}%</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-white">${parseFloat(product.price).toFixed(2)}</td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() => handleEditDiscount(product)}
+                                    className="bg-neon-blue/20 hover:bg-neon-blue/40 text-white px-3 py-1 rounded transition-colors"
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    onClick={() => handleRemoveDiscount(product.id)}
+                                    className="bg-red-500/20 hover:bg-red-500/40 text-white px-3 py-1 rounded transition-colors"
+                                  >
+                                    Eliminar
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="text-center py-12 text-white/70">
+                        No hay productos con descuento
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -2186,104 +2239,6 @@ const AdminDashboard = () => {
                   }}
                 >
                   Guardar Cambios
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
-      
-      {/* Discounted Products Table */}
-      {showDiscountedProducts && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <motion.div 
-            className="glassmorphism w-full max-w-6xl max-h-[90vh] overflow-y-auto"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="flex justify-between items-center p-6 border-b border-white/10">
-              <h2 className="text-xl font-orbitron font-bold text-white">
-                Productos con Descuento
-              </h2>
-              <button 
-                onClick={() => setShowDiscountedProducts(false)}
-                className="text-white/70 hover:text-white text-xl"
-              >
-                &times;
-              </button>
-            </div>
-            
-            <div className="p-6">
-              {discountedProducts.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-white/10">
-                    <thead className="bg-black/30">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">ID</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Nombre</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Precio Original</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Descuento</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Precio Final</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/10">
-                      {discountedProducts.map(product => (
-                        <tr key={product.id} className="hover:bg-white/5 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-white">{product.id}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-white">{product.name}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-white">${product.original_price?.toFixed(2) || "N/A"}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-green-400">{product.discount_percentage || 0}%</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-white">${parseFloat(product.price).toFixed(2)}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-white">
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => handleEditDiscount(product)}
-                                className="bg-neon-blue/20 hover:bg-neon-blue/40 text-white px-3 py-1 rounded transition-colors"
-                              >
-                                Editar
-                              </button>
-                              <button
-                                onClick={() => handleRemoveDiscount(product.id)}
-                                className="bg-red-500/20 hover:bg-red-500/40 text-white px-3 py-1 rounded transition-colors"
-                              >
-                                Eliminar
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-12 text-white/70">
-                  No hay productos con descuento
-                </div>
-              )}
-              
-              <div className="flex justify-end space-x-4 mt-6">
-                <button 
-                  type="button" 
-                  onClick={() => {
-                    setShowDiscountedProducts(false);
-                    setSelectedProducts([]);
-                    setDiscountPercentage(0);
-                    setSearchTerm('');
-                    setShowDiscountModal(true);
-                  }}
-                  className="btn-primary"
-                >
-                  Crear Nuevo Descuento
-                </button>
-                
-                <button 
-                  type="button" 
-                  onClick={() => setShowDiscountedProducts(false)}
-                  className="btn-secondary"
-                >
-                  Cerrar
                 </button>
               </div>
             </div>

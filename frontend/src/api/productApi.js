@@ -74,14 +74,35 @@ export const createProduct = async (productData) => {
 // Update a product
 export const updateProduct = async (id, productData) => {
   try {
-    const response = await axios.put(`/api/products/products/${id}/`, productData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
+    // Check if we're updating an image
+    const hasImage = productData.image instanceof File
+    
+    // Create FormData if we have an image
+    let data
+    let headers = {}
+    
+    if (hasImage) {
+      data = new FormData()
+      Object.keys(productData).forEach(key => {
+        data.append(key, productData[key])
+      })
+      headers['Content-Type'] = 'multipart/form-data'
+    } else {
+      data = productData
+      headers['Content-Type'] = 'application/json'
+    }
+    
+    console.log('Enviando datos al servidor:', data)
+    
+    const response = await axios.put(`/api/products/products/${id}/`, data, { headers })
+    console.log('Respuesta del servidor:', response.data)
     return response.data
   } catch (error) {
-    console.error(`Error updating product ${id}:`, error)
+    console.error('Error completo en updateProduct:', error)
+    if (error.response) {
+      console.error('Datos de error:', error.response.data)
+      console.error('Estado de error:', error.response.status)
+    }
     throw error
   }
 }

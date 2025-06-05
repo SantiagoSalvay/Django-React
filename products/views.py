@@ -30,6 +30,19 @@ class ProductViewSet(viewsets.ModelViewSet):
         if category:
             queryset = queryset.filter(category__slug=category)
         return queryset
+    
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response(
+                {'error': str(e), 'detail': serializer.errors if 'serializer' in locals() else None},
+                status=400
+            )
 
 class PaymentMethodViewSet(viewsets.ModelViewSet):
     queryset = PaymentMethod.objects.all()

@@ -41,6 +41,10 @@ const ProductCard = ({ product, isPreview = false }) => {
     return desc.length > 100 ? `${desc.substring(0, 100)}...` : desc
   }
 
+  // Determinar si el producto tiene un descuento válido
+  const hasValidDiscount = has_discount === true || discount_percentage > 0
+  const hasValidOriginalPrice = original_price && parseFloat(original_price) > parseFloat(price)
+
   return (
     <motion.div 
       className="card overflow-hidden h-full flex flex-col glassmorphism"
@@ -84,7 +88,7 @@ const ProductCard = ({ product, isPreview = false }) => {
         <div className="flex flex-wrap sm:flex-nowrap items-center justify-between mt-auto gap-2">
           <div className="flex flex-col">
             {/* Mostrar precio original y con descuento */}
-            {(has_discount || discount_percentage > 0) && original_price ? (
+            {hasValidDiscount && hasValidOriginalPrice ? (
               <>
                 <span className="text-sm line-through text-white/50">${formatPrice(original_price)}</span>
                 <span className="text-lg sm:text-xl md:text-2xl font-bold text-rose-500">${formatPrice(price)}</span>
